@@ -10,10 +10,38 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    // The human-readable message from the service's error body, when one was
+    // provided. Distinct from `message` (which always has a fallback) so
+    // callers can tell "the service explained why" from a generic failure.
+    public readonly detail?: string,
   ) {
     super(message)
     this.name = 'ApiError'
   }
+}
+
+// Pulls a human-readable message out of the service's error response. Spring's
+// default error body looks like { status, error, message, errors: [...] };
+// validation failures put per-field detail in `errors`. Returns undefined when
+// nothing useful is present so the caller can fall back to a generic message.
+function extractErrorDetail(body: string): string | undefined {
+  if (!body) return undefined
+  try {
+    const parsed = JSON.parse(body) as {
+      message?: string
+      errors?: Array<{ defaultMessage?: string }>
+    }
+    const fieldErrors = parsed.errors
+      ?.map((e) => e.defaultMessage)
+      .filter((m): m is string => Boolean(m))
+    if (fieldErrors && fieldErrors.length > 0) {
+      return fieldErrors.join(' ')
+    }
+    if (parsed.message) return parsed.message
+  } catch {
+    // Body wasn't JSON; ignore and let the caller use its fallback.
+  }
+  return undefined
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -26,7 +54,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   if (!response.ok) {
-    throw new ApiError(response.status, `Request to ${path} failed`)
+    const detail = extractErrorDetail(await response.text().catch(() => ''))
+    throw new ApiError(response.status, detail ?? `Request to ${path} failed`, detail)
   }
 
   // Some endpoints (e.g. health) may return no body.

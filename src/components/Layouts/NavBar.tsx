@@ -1,4 +1,5 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { NavLink } from "react-router-dom";
 import Stack from "@mui/material/Stack";
 import SportsEsportsRoundedIcon from "@mui/icons-material/SportsEsportsRounded";
 import ExtensionRoundedIcon from "@mui/icons-material/ExtensionRounded";
@@ -9,6 +10,8 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import ChessPlusPlusLogo from "../../assets/images/ChessPlusPlusLogoTrans.png";
 import { ACCENT_BLUE, ACCENT_PURPLE, ACCENT_AMBER, ACCENT_GREEN, MAIN_PURPLE } from "../../constants";
 import { Button } from "../Button";
+import SignUpDialog from "../SignUpDialog";
+import LoginDialog from "../LoginDialog";
 
 type MenuItem = {
   label: string;
@@ -26,7 +29,8 @@ const menuItems: MenuItem[] = [
 
 export default function NavBar() {
   const loggedIn = false;
-  const navigate = useNavigate();
+  const [signUpOpen, setSignUpOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   return (
     <Stack
@@ -82,14 +86,16 @@ export default function NavBar() {
         <>Logged In!</>
       ) : (
         <Stack direction="column" sx={{ gap: "10px" }}>
-          <Button id="login-button" type="primary" label="Log In" onClick={() => navigate("/login")} />
+          <Button id="login-button" type="primary" label="Log In" onClick={() => setLoginOpen(true)} />
+          <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
           <Button
             id="signup-button"
             type="primary"
             style={{ backgroundColor: MAIN_PURPLE }}
             label="Sign Up"
-            onClick={() => navigate("/signup")}
+            onClick={() => setSignUpOpen(true)}
           />
+          <SignUpDialog open={signUpOpen} onClose={() => setSignUpOpen(false)} />
           <NavLink
             to={"/help"}
             style={{ textDecoration: "none" }}
