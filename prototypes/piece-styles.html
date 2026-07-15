@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>egg-chess++ · piece art-direction gallery</title>
+<style>
+  :root {
+    --color-bg: #1a1a1a;
+    --color-surface: #242424;
+    --color-border: #3a3a3a;
+    --color-text: rgba(255,255,255,.9);
+    --color-muted: rgba(255,255,255,.55);
+    --color-accent: #646cff;
+    --square-light: #ebecd0;
+    --square-dark: #779556;
+    --sq: 82px;
+    --tilt: 0deg;
+    color-scheme: dark;
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    color: var(--color-text);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 50% -10%, #2b2b33 0%, var(--color-bg) 60%);
+    min-height: 100vh; padding: 26px 18px 60px;
+  }
+  header { text-align: center; margin-bottom: 8px; }
+  header h1 { margin: 0; font-size: 21px; }
+  header p { margin: 5px 0 0; color: var(--color-muted); font-size: 13px; }
+
+  .controls {
+    display: flex; gap: 22px; justify-content: center; align-items: center; flex-wrap: wrap;
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: 12px; padding: 12px 18px; width: min(680px, 94vw); margin: 16px auto 30px;
+  }
+  .controls label { font-size: 13px; color: var(--color-muted); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .controls input[type=range] { accent-color: var(--color-accent); }
+
+  .gallery {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr));
+    gap: 22px; max-width: 1500px; margin: 0 auto;
+  }
+  .card {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: 16px; padding: 18px 18px 22px; overflow: hidden;
+  }
+  .card h2 { margin: 0; font-size: 17px; display: flex; align-items: baseline; gap: 10px; }
+  .card h2 .tag {
+    font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    color: var(--color-accent); background: rgba(100,108,255,.12);
+    border: 1px solid rgba(100,108,255,.3); border-radius: 999px; padding: 2px 8px;
+  }
+  .card .desc { margin: 8px 0 3px; font-size: 13px; color: var(--color-text); }
+  .card .best { margin: 0 0 14px; font-size: 12px; color: var(--color-muted); }
+  .card .best b { color: var(--color-accent); font-weight: 600; }
+
+  .stripwrap { perspective: 1300px; perspective-origin: 50% 40%; }
+  .strip {
+    display: flex; border-radius: 8px; overflow: hidden; transform-style: preserve-3d;
+    transform: rotateX(var(--tilt)); transition: transform .15s;
+    box-shadow: 0 20px 40px rgba(0,0,0,.4);
+  }
+  .cell {
+    position: relative; width: var(--sq); height: var(--sq);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .cell.light { background: var(--square-light); }
+  .cell.dark  { background: var(--square-dark); }
+  .cell .shadow {
+    position: absolute; bottom: 8%; left: 50%; width: 60%; height: 18%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse, rgba(0,0,0,.5), rgba(0,0,0,0) 70%); filter: blur(1px);
+  }
+  .p {
+    position: absolute; bottom: 8%; left: 50%; width: calc(var(--sq) * 0.9); height: auto;
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotateX(calc(var(--tilt) * -1));
+    filter: drop-shadow(0 5px 4px rgba(0,0,0,.4));
+  }
+  .p.neon { filter: drop-shadow(0 0 2px #57eaff) drop-shadow(0 0 8px #38c6ff) drop-shadow(0 5px 4px rgba(0,0,0,.5)); }
+  .p.gold { filter: drop-shadow(0 0 3px rgba(255,200,80,.5)) drop-shadow(0 5px 4px rgba(0,0,0,.45)); }
+</style>
+</head>
+<body>
+  <header>
+    <h1>egg-chess<span style="color:var(--color-accent)">++</span> · piece art-direction gallery</h1>
+    <p>Same silhouettes, six treatments — judge readability &amp; vibe on the real board. Toggle team &amp; tilt to stress-test.</p>
+  </header>
+
+  <div class="controls">
+    <label><input type="radio" name="team" value="white" checked> White pieces</label>
+    <label><input type="radio" name="team" value="black"> Black pieces</label>
+    <label><input type="checkbox" id="tilt"> Show at 35° tilt</label>
+    <label>Size <input type="range" id="size" min="60" max="110" value="82"></label>
+  </div>
+
+  <!-- shared gradients (objectBoundingBox → identical mapping for every full-box rect) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <linearGradient id="g-classic-white" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdfdf8"/><stop offset="1" stop-color="#c3c4b7"/></linearGradient>
+    <linearGradient id="g-classic-black" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5c5c66"/><stop offset="1" stop-color="#141419"/></linearGradient>
+    <linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".45" stop-color="#e8b53a"/><stop offset="1" stop-color="#8a5f12"/></linearGradient>
+  </defs></svg>
+
+  <div class="gallery" id="gallery"></div>
+
+<script>
+  const ORDER = ["k","q","r","b","n","p"];
+  const SHAPE = {
+    p: `<ellipse cx="50" cy="60" rx="14"/><path d="M40,104 C40,90 38,80 45,74 L55,74 C62,80 60,90 60,104 Z"/><ellipse cx="50" cy="73" rx="16" ry="4.5"/>`,
+    r: `<path d="M34,104 L36,66 L64,66 L66,104 Z"/><ellipse cx="50" cy="66" rx="17" ry="4"/><path d="M30,66 L30,48 L38,48 L38,55 L46,55 L46,48 L54,48 L54,55 L62,55 L62,48 L70,48 L70,66 Z"/>`,
+    b: `<path d="M36,104 C33,86 41,74 50,54 C59,74 67,86 64,104 Z"/><ellipse cx="50" cy="60" rx="15" ry="4"/><ellipse cx="50" cy="43" rx="11" ry="14"/><circle cx="50" cy="24" r="5"/>`,
+    n: `<path d="M40,104 L37,84 C28,80 25,66 35,54 C41,47 45,43 43,33 C43,28 48,27 50,32 C55,25 64,25 68,34 C75,46 72,63 63,72 C71,76 72,90 71,104 Z"/><path d="M46,35 L51,19 L58,33 Z"/>`,
+    q: `<path d="M34,104 C34,84 43,74 45,60 L55,60 C57,74 66,84 66,104 Z"/><ellipse cx="50" cy="61" rx="16" ry="4"/><path d="M35,58 L33,40 L43,52 L50,36 L57,52 L67,40 L65,58 Z"/><circle cx="33" cy="38" r="5"/><circle cx="50" cy="33" r="6"/><circle cx="67" cy="38" r="5"/>`,
+    k: `<path d="M34,104 C34,84 43,74 45,60 L55,60 C57,74 66,84 66,104 Z"/><ellipse cx="50" cy="61" rx="16" ry="4"/><path d="M36,58 L39,44 L50,52 L61,44 L64,58 Z"/><rect x="46.5" y="18" width="7" height="24" rx="1.5"/><rect x="41" y="25" width="18" height="7" rx="1.5"/>`,
+  };
+
+  const STYLES = {
+    classic: { name:"Classic Staunton", tag:"Traditional",
+      desc:"Turned-wood tournament pieces with soft shading. Reads instantly as “chess.”",
+      best:"If elixir/HP should feel <b>bolted onto real chess</b> — safe, timeless, universally legible." },
+    cartoon: { name:"Chunky Cartoon", tag:"Mobile / Clash",
+      desc:"Fat outlines, flat cel shading, high saturation. Playful and punchy.",
+      best:"Leans <b>hardest into the MOBA/elixir fantasy</b>; best mass-market casual appeal." },
+    flat: { name:"Flat Minimal", tag:"Modern UI",
+      desc:"Solid single-tone silhouettes, no outline. Clean and app-native.",
+      best:"Fastest to read; pairs well with a <b>data-heavy HP/elixir HUD</b>." },
+    neon: { name:"Neon Glass", tag:"Cyber",
+      desc:"Dark glassy bodies with glowing team-colored edges.",
+      best:"High-contrast on a dark board; feels <b>premium &amp; futuristic</b>." },
+    gold: { name:"Ornate Gold", tag:"Premium",
+      desc:"Metallic engraved pieces with specular highlights.",
+      best:"Luxe, collectible energy — natural fit for <b>ranked / prestige skins</b>." },
+    lowpoly: { name:"Low-Poly", tag:"Indie",
+      desc:"Faceted flat-shaded surfaces, geometric and angular.",
+      best:"Distinctive indie identity that's <b>cheap to re-theme</b> per game variant." },
+  };
+
+  const FACETS = [
+    ["8,2 54,22 2,66", 1],["54,22 98,6 99,54", 0],["99,54 58,60 96,112", 1],
+    ["2,66 46,56 22,114", 0],["46,56 58,60 50,114", 1],["54,22 2,66 46,56", 0],
+    ["54,22 46,56 99,54", 1],["22,114 50,114 46,56", 0],["58,60 99,54 96,112", 0],
+  ];
+
+  function strokeFor(style, black) {
+    switch (style) {
+      case "classic": return black ? "#050506" : "#7d7e70";
+      case "cartoon": return black ? "#000" : "#20201f";
+      case "flat":    return "none";
+      case "neon":    return "#7bf3ff";
+      case "gold":    return "#5a3d0a";
+      case "lowpoly": return "rgba(0,0,0,.32)";
+    }
+  }
+  function strokeW(style) { return ({classic:2.5,cartoon:6,flat:0,neon:2.5,gold:2,lowpoly:1.4})[style]; }
+
+  function inner(style, black) {
+    switch (style) {
+      case "classic":
+        return `<rect width="100" height="116" fill="url(#g-classic-${black?'black':'white'})"/>
+                <polygon points="0,0 48,0 30,116 0,116" fill="rgba(255,255,255,${black?.10:.24})"/>
+                <polygon points="70,0 100,0 100,116 60,116" fill="rgba(0,0,0,.20)"/>`;
+      case "cartoon":
+        return `<rect width="100" height="72" fill="${black?'#6d6d79':'#ffffff'}"/>
+                <rect y="60" width="100" height="56" fill="${black?'#31313a':'#d4d5c9'}"/>
+                <ellipse cx="38" cy="34" rx="15" ry="22" fill="rgba(255,255,255,${black?.16:.5})"/>`;
+      case "flat":
+        return `<rect width="100" height="116" fill="${black?'#3b3b45':'#e9eadd'}"/>`;
+      case "neon":
+        return `<rect width="100" height="116" fill="#0d0d15"/>
+                <rect width="100" height="46" fill="rgba(120,240,255,.10)"/>`;
+      case "gold":
+        return `<rect width="100" height="116" fill="url(#g-gold)"/>
+                <polygon points="0,0 42,0 26,116 0,116" fill="rgba(255,255,255,.32)"/>
+                <polygon points="72,0 100,0 100,116 62,116" fill="rgba(80,52,0,.4)"/>`;
+      case "lowpoly": {
+        const base = black ? "#414652" : "#dfe0d2";
+        const tris = FACETS.map(([p, l]) =>
+          `<polygon points="${p}" fill="${l ? `rgba(255,255,255,${black?.10:.16})` : `rgba(0,0,0,${black?.22:.14})`}"/>`).join("");
+        return `<rect width="100" height="116" fill="${base}"/>${tris}`;
+      }
+    }
+  }
+
+  let uid = 0;
+  function pieceSvg(type, style, black) {
+    const clip = "clip" + (uid++);
+    const shape = SHAPE[type];
+    const sw = strokeW(style), stroke = strokeFor(style, black);
+    const outline = sw ? `<g clip-path="url(#${clip})" fill="none" stroke="${stroke}" stroke-width="${sw*2}" stroke-linejoin="round">${shape}</g>` : "";
+    return `<svg class="p ${style}" viewBox="0 0 100 116" xmlns="http://www.w3.org/2000/svg">
+      <defs><clipPath id="${clip}">${shape}</clipPath></defs>
+      <g clip-path="url(#${clip})">${inner(style, black)}</g>
+      ${outline}
+    </svg>`;
+  }
+
+  const gallery = document.getElementById("gallery");
+  let team = "white";
+
+  function render() {
+    const black = team === "black";
+    gallery.innerHTML = Object.entries(STYLES).map(([key, s]) => {
+      const cells = ORDER.map((t, i) =>
+        `<div class="cell ${i % 2 ? 'dark' : 'light'}"><span class="shadow"></span>${pieceSvg(t, key, black)}</div>`
+      ).join("");
+      return `<div class="card">
+        <h2>${s.name} <span class="tag">${s.tag}</span></h2>
+        <p class="desc">${s.desc}</p>
+        <p class="best">Best for: ${s.best}</p>
+        <div class="stripwrap"><div class="strip">${cells}</div></div>
+      </div>`;
+    }).join("");
+  }
+
+  document.querySelectorAll('input[name=team]').forEach(r =>
+    r.addEventListener("change", e => { team = e.target.value; render(); }));
+  document.getElementById("tilt").addEventListener("change", e =>
+    document.documentElement.style.setProperty("--tilt", e.target.checked ? "35deg" : "0deg"));
+  document.getElementById("size").addEventListener("input", e =>
+    document.documentElement.style.setProperty("--sq", e.target.value + "px"));
+
+  render();
+</script>
+</body>
+</html>

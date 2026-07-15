@@ -1,5 +1,5 @@
 import { Button as MuiButton } from "@mui/material";
-import { MAIN_BLUE } from "../constants";
+import { MAIN_BLUE, TEXT_MUTED } from "../constants";
 
 interface IButtonProps {
   id: string;
@@ -44,7 +44,8 @@ export const Button: React.FC<IButtonProps> = ({ ...props }) => {
       style={{
         ...buttonStyle,
         ...props.style,
-        backgroundColor: baseColor,
+        backgroundColor: props.isDisabled ? "rgba(0, 0, 0, 0.05)" : baseColor,
+        color: props.isDisabled ? TEXT_MUTED : "white",
       }}
       sx={{
         backgroundImage: gradientOverlay,

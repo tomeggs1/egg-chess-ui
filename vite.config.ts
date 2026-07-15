@@ -12,6 +12,12 @@ export default defineConfig({
         target: 'http://localhost:8180',
         changeOrigin: true,
       },
+      // Forward the WebSocket (STOMP) endpoint, including the upgrade handshake.
+      '/ws': {
+        target: 'http://localhost:8180',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 })

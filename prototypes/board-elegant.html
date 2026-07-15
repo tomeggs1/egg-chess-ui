@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>egg-chess++ · ElegantBlueGold on the board</title>
+<style>
+  :root {
+    --color-bg: #1a1a1a;
+    --color-surface: #242424;
+    --color-border: #3a3a3a;
+    --color-text: rgba(255,255,255,.9);
+    --color-muted: rgba(255,255,255,.55);
+    --color-accent: #646cff;
+    --square-light: #ebecd0;
+    --square-dark: #779556;
+
+    --sq: 78px;
+    --tilt: 30deg;
+    --scale: 0.82;   /* piece width as a fraction of a square */
+    --lift: 5px;
+
+    color-scheme: dark;
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    color: var(--color-text);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: radial-gradient(1300px 700px at 50% -10%, #2c2c34 0%, var(--color-bg) 62%);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 60px; gap: 22px;
+  }
+  header { text-align: center; }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 5px 0 0; color: var(--color-muted); font-size: 13px; }
+
+  .stage { perspective: 1500px; perspective-origin: 50% 40%; padding: 44px 40px 66px; }
+
+  .frame {
+    padding: 14px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #3a3326, #241f16);
+    box-shadow: 0 40px 90px rgba(0,0,0,.6), 0 10px 24px rgba(0,0,0,.45),
+                inset 0 0 0 1px rgba(212,175,90,.35);
+    transform: rotateX(var(--tilt));
+    transform-style: preserve-3d;
+    transition: transform .15s ease-out;
+  }
+  .board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(8, var(--sq));
+    grid-template-rows: repeat(8, var(--sq));
+    transform-style: preserve-3d;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .square { position: relative; }
+  .square.light { background: var(--square-light); }
+  .square.dark  { background: var(--square-dark); }
+  .square .coord {
+    position: absolute; font-size: 10px; font-weight: 700; opacity: .55; user-select: none;
+    color: #4c5733;
+  }
+  .square.dark .coord { color: #d7d8be; }
+  .square .coord.file { right: 3px; bottom: 2px; }
+  .square .coord.rank { left: 3px; top: 2px; }
+
+  .piece-shadow {
+    position: absolute; bottom: 7%; left: 50%; width: 58%; height: 16%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse, rgba(0,0,0,.5), rgba(0,0,0,0) 70%);
+    filter: blur(1.5px); pointer-events: none;
+  }
+  .piece {
+    position: absolute; bottom: calc(7% + var(--lift)); left: 50%;
+    width: calc(var(--sq) * var(--scale)); height: auto;
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotateX(calc(var(--tilt) * -1));
+    filter: drop-shadow(0 6px 5px rgba(0,0,0,.45));
+    transition: transform .12s ease-out, filter .12s;
+    cursor: pointer;
+  }
+  .piece:hover { filter: drop-shadow(0 12px 9px rgba(0,0,0,.5)) brightness(1.06); }
+  .piece.sel   { filter: drop-shadow(0 0 10px var(--color-accent)) drop-shadow(0 8px 6px rgba(0,0,0,.5)); }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; justify-content: center;
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: 12px; padding: 14px 18px; width: min(640px, 94vw);
+  }
+  .controls label { font-size: 13px; color: var(--color-muted); display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .controls input[type=range] { width: 140px; accent-color: var(--color-accent); }
+  .controls output { color: var(--color-text); font-variant-numeric: tabular-nums; min-width: 42px; }
+  .hint { color: var(--color-muted); font-size: 12px; text-align: center; max-width: 620px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>egg-chess<span style="color:var(--color-accent)">++</span> · ElegantBlueGold on the board</h1>
+    <p>Full two-army set (backgrounds removed) at the starting position. Adjust tilt, scale &amp; lift to taste.</p>
+  </header>
+
+  <div class="stage"><div class="frame"><div class="board" id="board"></div></div></div>
+
+  <div class="controls">
+    <label>Tilt <input type="range" id="tilt" min="0" max="45" value="30"><output id="tiltOut">30°</output></label>
+    <label>Piece scale <input type="range" id="scale" min="50" max="120" value="82"><output id="scaleOut">0.82</output></label>
+    <label>Lift <input type="range" id="lift" min="0" max="24" value="5"><output id="liftOut">5px</output></label>
+    <label>Square <input type="range" id="size" min="54" max="96" value="78"><output id="sizeOut">78px</output></label>
+    <label class="toggle"><input type="checkbox" id="flip"> Flip board</label>
+  </div>
+  <p class="hint">Pure CSS 3D — the board plane tilts, each piece counter-rotates to stand upright, and its ground-shadow stays flat on the plane. Click a piece to see the selection glow.</p>
+
+<script>
+  const START = [
+    "rnbqkbnr", "pppppppp", "........", "........",
+    "........", "........", "PPPPPPPP", "RNBQKBNR",
+  ];
+  const NAME = { k:"king", q:"queen", r:"rook", b:"bishop", n:"knight", p:"pawn" };
+  const BASE = "../src/assets/images/pieces/ElegantBlueGold/cutout/";
+  const files = "abcdefgh";
+  const board = document.getElementById("board");
+  let flipped = false, selected = null;
+
+  function build() {
+    board.innerHTML = "";
+    const rows = flipped ? [...Array(8).keys()].reverse() : [...Array(8).keys()];
+    const cols = flipped ? [...Array(8).keys()].reverse() : [...Array(8).keys()];
+    for (const r of rows) {
+      for (const c of cols) {
+        const sq = document.createElement("div");
+        sq.className = "square " + ((r + c) % 2 === 0 ? "light" : "dark");
+        if (c === (flipped ? 7 : 0)) sq.insertAdjacentHTML("beforeend", `<span class="coord rank">${8 - r}</span>`);
+        if (r === (flipped ? 0 : 7)) sq.insertAdjacentHTML("beforeend", `<span class="coord file">${files[c]}</span>`);
+
+        const ch = START[r][c];
+        if (ch !== ".") {
+          const color = ch === ch.toUpperCase() ? "white" : "black";
+          const type = NAME[ch.toLowerCase()];
+          sq.insertAdjacentHTML("beforeend", `<span class="piece-shadow"></span>`);
+          const img = document.createElement("img");
+          img.className = "piece";
+          img.src = `${BASE}${color}-${type}.png`;
+          img.alt = `${color} ${type}`;
+          img.draggable = false;
+          img.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (selected) selected.classList.remove("sel");
+            selected = selected === img ? null : (img.classList.add("sel"), img);
+          });
+          sq.appendChild(img);
+        }
+        board.appendChild(sq);
+      }
+    }
+  }
+  board.addEventListener("click", () => { if (selected) { selected.classList.remove("sel"); selected = null; } });
+
+  const root = document.documentElement.style;
+  const bind = (id, fn) => document.getElementById(id).addEventListener("input", fn);
+  bind("tilt",  e => { root.setProperty("--tilt", e.target.value + "deg"); tiltOut.value = e.target.value + "°"; });
+  bind("scale", e => { const v = (e.target.value/100).toFixed(2); root.setProperty("--scale", v); scaleOut.value = v; });
+  bind("lift",  e => { root.setProperty("--lift", e.target.value + "px"); liftOut.value = e.target.value + "px"; });
+  bind("size",  e => { root.setProperty("--sq", e.target.value + "px"); sizeOut.value = e.target.value + "px"; });
+  document.getElementById("flip").addEventListener("change", e => { flipped = e.target.checked; build(); });
+
+  build();
+</script>
+</body>
+</html>

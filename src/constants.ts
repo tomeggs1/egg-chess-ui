@@ -44,12 +44,4 @@ export const TEXT_SECONDARY = "#b5b5bd"; // body / medium-emphasis
 export const TEXT_MUTED = "#7c7c85"; // captions / disabled
 
 // --- Palette groupings (handy for iteration) --------------------------------
-export const ACCENTS = [
-  ACCENT_BLUE,
-  ACCENT_CYAN,
-  ACCENT_TEAL,
-  ACCENT_GREEN,
-  ACCENT_AMBER,
-  ACCENT_PINK,
-  ACCENT_PURPLE,
-] as const;
+export const ACCENTS = [ACCENT_BLUE, ACCENT_CYAN, ACCENT_TEAL, ACCENT_GREEN, ACCENT_PINK, ACCENT_PURPLE] as const;
