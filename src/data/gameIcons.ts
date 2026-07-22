@@ -1,6 +1,6 @@
 import standardChessIcon from "../assets/images/standardChessIcon.png";
 import norooksChessIcon from "../assets/images/norook.webp";
-import hordeChessIcon from "../assets/images/horde.png";
+import hordeChessIcon from "../assets/images/Horde.png";
 
 /**
  * Built-in game icons, keyed by stable preset name. A game definition stores the
