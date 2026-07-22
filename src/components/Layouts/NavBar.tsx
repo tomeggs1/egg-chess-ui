@@ -163,7 +163,7 @@ export default function NavBar() {
       direction="column"
       sx={{
         backgroundColor: "#222222",
-        width: "220px",
+        width: "230px",
         height: "100vh",
         color: "#ffffff",
         padding: "16px",
