@@ -1,7 +1,9 @@
+import type { PieceType } from "./pieceThemes";
+
 export enum TimerCategory {
   LIGHTNING = "Lightning",
   QUICK = "Quick",
-  CLASSICAL = "Classical",
+  LONG = "Long",
 }
 
 export enum PlayerColor {
@@ -41,6 +43,10 @@ export interface MoveDefinition {
 export interface PieceDefinition {
   name: string;
   moves: MoveDefinition[];
+  /** Can capture en passant (and its double-step is en-passant-vulnerable). */
+  enPassant?: boolean;
+  /** Promotes on reaching the far rank (the piece it becomes is chosen at move time). */
+  promotes?: boolean;
 }
 
 export interface TimerConfig {
@@ -63,13 +69,26 @@ export const TimerOptions: Record<TimerCategory, TimerConfig[]> = {
     { id: "30+0", name: "30 min", category: TimerCategory.QUICK, initial_time: 1800, increment: 0 },
     { id: "60+0", name: "60 min", category: TimerCategory.QUICK, initial_time: 3600, increment: 0 },
   ],
-  [TimerCategory.CLASSICAL]: [
-    { id: "1d", name: "1 day", category: TimerCategory.CLASSICAL, initial_time: 86400, increment: 0 },
-    { id: "2d", name: "2 days", category: TimerCategory.CLASSICAL, initial_time: 172800, increment: 10 },
-    { id: "7d", name: "7 days", category: TimerCategory.CLASSICAL, initial_time: 604800, increment: 0 },
-    { id: "unlimited", name: "Unlimited", category: TimerCategory.CLASSICAL, initial_time: null, increment: 0 },
+  [TimerCategory.LONG]: [
+    { id: "1d", name: "1 day", category: TimerCategory.LONG, initial_time: 86400, increment: 0 },
+    { id: "2d", name: "2 days", category: TimerCategory.LONG, initial_time: 172800, increment: 10 },
+    { id: "7d", name: "7 days", category: TimerCategory.LONG, initial_time: 604800, increment: 0 },
+    { id: "unlimited", name: "Unlimited", category: TimerCategory.LONG, initial_time: null, increment: 0 },
   ],
 };
+/**
+ * A castling option for a game. Files are 0-based (a=0). Castling is symmetric
+ * across colors, so only files are specified — the rank is the king's own. The
+ * king slides from its square to `kingToFile`; the rook at `rookFromFile` jumps
+ * to `rookToFile`. Omitting `GameDefinition.castling` disables castling.
+ */
+export interface CastlingRule {
+  id: string; // e.g. "kingside" | "queenside"
+  kingToFile: number;
+  rookFromFile: number;
+  rookToFile: number;
+}
+
 export interface GameDefinition {
   id: string;
   name: string;
@@ -77,6 +96,10 @@ export interface GameDefinition {
   player_colors: PlayerColor[];
   pieces: PieceDefinition[];
   starting_positions: string;
+  /** Castling options, or omitted for none (variant-customizable). */
+  castling?: CastlingRule[];
+  /** Pieces a pawn may promote to. Defaults to the game's non-pawn/king pieces. */
+  promotionPieces?: PieceType[];
 }
 
 export interface GamePlayer {

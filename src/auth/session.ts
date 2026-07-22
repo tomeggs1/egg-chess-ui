@@ -1,8 +1,8 @@
 // Persistent storage for the JWT returned by /api/login. Kept framework-free
 // (no React) so the API client can read the token without importing UI code.
-import { APP_NAME } from "../constants";
+import { STORAGE_PREFIX } from "../constants";
 
-const AUTH_TOKEN_KEY = APP_NAME + ":authToken";
+const AUTH_TOKEN_KEY = STORAGE_PREFIX + ":authToken";
 
 export function getAuthToken(): string | null {
   try {

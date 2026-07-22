@@ -9,21 +9,7 @@ import { friendKeys } from "./useFriends";
 import { presenceKeys } from "./usePresence";
 import { messageKeys } from "./useMessages";
 import { challengeKeys } from "./useChallenges";
-
-// Resolves the STOMP WebSocket URL. In production VITE_API_BASE_URL points at
-// the service; in dev it's unset and Vite proxies "/ws" to :8180.
-function resolveWsUrl(): string {
-  const base = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  if (base) {
-    const url = new URL(base);
-    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    url.pathname = "/ws";
-    url.search = "";
-    return url.toString();
-  }
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/ws`;
-}
+import { resolveWsUrl } from "../api/ws";
 
 /**
  * One STOMP-over-WebSocket connection for the whole app, opened while

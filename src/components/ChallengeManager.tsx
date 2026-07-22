@@ -9,7 +9,7 @@ import {
   useOutgoingChallenges,
 } from "../hooks/useChallenges";
 import type { ChallengeResponse } from "../api/challenges";
-import { GameDefinitions } from "../data/gameDefinitions";
+import { useGameCatalog } from "../data/GameCatalogContext";
 import { PlayerBadge } from "./PlayerBadge";
 import {
   ACCENT_BLUE,
@@ -17,13 +17,12 @@ import {
   COLOR_SUCCESS,
   SURFACE_800,
   SURFACE_BORDER,
-  TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../constants";
 
-function gameName(id: string): string {
-  return GameDefinitions.find((g) => g.id === id)?.name ?? id;
+function gameName(id: string, definitions: Array<{ id: string; name: string }>): string {
+  return definitions.find((g) => g.id === id)?.name ?? id;
 }
 
 function timeControl(initialSeconds: number | null, increment: number): string {
@@ -57,6 +56,7 @@ const dialogPaperSx = {
 
 function IncomingChallengeModal({ challenge }: { challenge: ChallengeResponse }) {
   const navigate = useNavigate();
+  const { definitions } = useGameCatalog();
   const accept = useAcceptChallenge();
   const decline = useDeclineChallenge();
   const secondsLeft = useSecondsLeft(challenge.expiresAt);
@@ -85,7 +85,7 @@ function IncomingChallengeModal({ challenge }: { challenge: ChallengeResponse })
           size={48}
         />
         <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
-          challenges you to <strong>{gameName(challenge.gameDefinitionId)}</strong> ·{" "}
+          challenges you to <strong>{gameName(challenge.gameDefinitionId, definitions)}</strong> ·{" "}
           {timeControl(challenge.initialSeconds, challenge.incrementSeconds)} · {challenge.rated ? "Rated" : "Casual"}
         </Typography>
 
@@ -127,6 +127,7 @@ function IncomingChallengeModal({ challenge }: { challenge: ChallengeResponse })
 // --- Outgoing: waiting for your challenge to be answered ----------------------
 
 function OutgoingChallengeModal({ challenge }: { challenge: ChallengeResponse }) {
+  const { definitions } = useGameCatalog();
   const cancel = useCancelChallenge();
   const secondsLeft = useSecondsLeft(challenge.expiresAt);
 
@@ -148,7 +149,7 @@ function OutgoingChallengeModal({ challenge }: { challenge: ChallengeResponse })
           size={48}
         />
         <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
-          Waiting for a response · <strong>{gameName(challenge.gameDefinitionId)}</strong> ·{" "}
+          Waiting for a response · <strong>{gameName(challenge.gameDefinitionId, definitions)}</strong> ·{" "}
           {timeControl(challenge.initialSeconds, challenge.incrementSeconds)} · {challenge.rated ? "Rated" : "Casual"}
         </Typography>
         <Box sx={{ mt: 1 }}>

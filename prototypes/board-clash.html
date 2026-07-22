@@ -14,7 +14,7 @@
     --gold: #e7c66b;
     --gold-deep: #b8860b;
     --sq: 74px;
-    --scale: 0.82;   /* piece width as fraction of a square */
+    --scale: 1.3;    /* base piece height (king) in squares; slider-driven */
     color-scheme: dark;
     font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
     color: var(--color-text);
@@ -126,7 +126,9 @@
   }
   .piece {
     position: relative; z-index: 2;
-    width: calc(var(--sq) * var(--scale)); height: auto; margin-bottom: 4%;
+    /* Sized by HEIGHT with a per-piece ratio (--h) so pieces keep real chess
+       proportions regardless of each image's arbitrary bounding-box width. */
+    height: calc(var(--sq) * var(--scale) * var(--h, 1)); width: auto; margin-bottom: 4%;
     filter: drop-shadow(0 5px 4px rgba(0,0,0,.4));
     transition: transform .1s, filter .1s; cursor: pointer;
   }
@@ -156,6 +158,11 @@
   }
   .controls label { font-size: 13px; color: var(--color-muted); display: flex; align-items: center; gap: 9px; cursor: pointer; }
   .controls input[type=range] { width: 130px; accent-color: var(--gold); }
+  .controls select {
+    background: #14161d; color: var(--color-text); border: 1px solid var(--color-border);
+    border-radius: 8px; padding: 5px 8px; font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .controls select:focus { outline: none; border-color: var(--gold); }
   .controls output { color: var(--color-text); font-variant-numeric: tabular-nums; min-width: 42px; }
   .hint { color: var(--color-muted); font-size: 12px; text-align: center; max-width: 620px; }
 </style>
@@ -178,8 +185,15 @@
   </div>
 
   <div class="controls">
+    <label>Pieces
+      <select id="theme">
+        <option value="ElegantBlueGold">Elegant Blue &amp; Gold</option>
+        <option value="ClashStyle">Clash Style</option>
+        <option value="Basic">Basic</option>
+      </select>
+    </label>
     <label>Square <input type="range" id="size" min="54" max="94" value="74"><output id="sizeOut">74px</output></label>
-    <label>Piece scale <input type="range" id="scale" min="55" max="115" value="82"><output id="scaleOut">0.82</output></label>
+    <label>Piece size <input type="range" id="scale" min="90" max="180" value="130"><output id="scaleOut">1.30</output></label>
     <label class="toggle"><input type="checkbox" id="flip"> Flip board</label>
   </div>
   <p class="hint">Click a piece for the selection glow + legal-move decals. The tile texture, gold grout, crests, and elixir HUD are all CSS — swap in AI-generated arena art later without touching the grid.</p>
@@ -190,7 +204,11 @@
     "........", "........", "PPPPPPPP", "RNBQKBNR",
   ];
   const NAME = { k:"king", q:"queen", r:"rook", b:"bishop", n:"knight", p:"pawn" };
-  const BASE = "../src/assets/images/pieces/ElegantBlueGold/cutout/";
+  // Relative display height per piece type (king = 1.0). Keeps chess proportions
+  // no matter how each source image happens to be cropped.
+  const HEIGHT = { king:1.0, queen:0.95, bishop:0.86, knight:0.84, rook:0.78, pawn:0.70 };
+  const PIECES_ROOT = "../src/assets/images/pieces/";
+  let themeDir = "ElegantBlueGold";
   const files = "abcdefgh";
   const board = document.getElementById("board");
   let flipped = false, selectedSq = null;
@@ -215,7 +233,8 @@
           sq.insertAdjacentHTML("beforeend", `<span class="piece-shadow"></span>`);
           const img = document.createElement("img");
           img.className = "piece";
-          img.src = `${BASE}${color}-${type}.png`;
+          img.style.setProperty("--h", HEIGHT[type]);
+          img.src = `${PIECES_ROOT}${themeDir}/${color}-${type}.png`;
           img.alt = `${color} ${type}`;
           img.draggable = false;
           img.addEventListener("click", (e) => { e.stopPropagation(); select(sq, c, r); });
@@ -259,6 +278,7 @@
   document.getElementById("size").addEventListener("input", e => { root.setProperty("--sq", e.target.value+"px"); sizeOut.value = e.target.value+"px"; });
   document.getElementById("scale").addEventListener("input", e => { const v=(e.target.value/100).toFixed(2); root.setProperty("--scale", v); scaleOut.value = v; });
   document.getElementById("flip").addEventListener("change", e => { flipped = e.target.checked; build(); });
+  document.getElementById("theme").addEventListener("change", e => { themeDir = e.target.value; build(); });
 
   build(); drawElixir();
 </script>

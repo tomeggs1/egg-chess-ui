@@ -1,4 +1,10 @@
-export const APP_NAME = "Chess++";
+// Player-facing brand name. Safe to change freely — used only for display.
+export const APP_NAME = "HP Chess";
+
+// Stable prefix for localStorage keys. Intentionally decoupled from APP_NAME:
+// changing the display name must NOT invalidate existing users' saved tokens /
+// remembered usernames. Do not change this without a migration.
+export const STORAGE_PREFIX = "Chess++";
 
 // ============================================================================
 // Color palette
@@ -28,6 +34,7 @@ export const ACCENT_GREEN = "#34d399";
 export const COLOR_SUCCESS = "#22c55e";
 export const COLOR_WARNING = "#f59e0b";
 export const COLOR_ERROR = "#ef4444";
+export const COLOR_ERROR_TRANSPARENT = "#ef4444d0";
 export const COLOR_INFO = "#38bdf8";
 
 // --- Surfaces (layered dark backgrounds) ------------------------------------

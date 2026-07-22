@@ -17,7 +17,7 @@ import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
-import ChessPlusPlusLogo from "../assets/images/ChessPlusPlusLogoTrans.png";
+import AppLogo from "../assets/images/HPChessLogo.png";
 import { register } from "../api/auth";
 import { ApiError } from "../api/client";
 import { Button } from "./Button";
@@ -192,12 +192,7 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
           }}
         />
         <Stack direction="column" sx={{ position: "relative", alignItems: "center", gap: 1.25 }}>
-          <Box
-            component="img"
-            src={ChessPlusPlusLogo}
-            alt={APP_NAME}
-            sx={{ width: 100, height: "auto", display: "block" }}
-          />
+          <Box component="img" src={AppLogo} alt={APP_NAME} sx={{ width: 100, height: "auto", display: "block" }} />
           <Typography variant="h5" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
             Create your account
           </Typography>
@@ -349,12 +344,7 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
               )}
             />
 
-            <AvatarPicker
-              username={form.username}
-              value={avatarKey}
-              onChange={setAvatarKey}
-              disabled={busy}
-            />
+            <AvatarPicker username={form.username} value={avatarKey} onChange={setAvatarKey} disabled={busy} />
 
             {message && (
               <Alert

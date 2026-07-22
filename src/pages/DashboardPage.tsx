@@ -11,6 +11,7 @@ import {
   ACCENT_BLUE,
   ACCENT_GREEN,
   ACCENT_PURPLE,
+  APP_NAME,
   SURFACE_800,
   SURFACE_BORDER,
   TEXT_MUTED,
@@ -75,7 +76,7 @@ export default function DashboardPage() {
         Welcome back, {player.username}
       </Typography>
       <Typography variant="body2" sx={{ color: TEXT_SECONDARY, mt: 0.5, mb: 3 }}>
-        Here's your Chess++ dashboard.
+        Here's your {APP_NAME} dashboard.
       </Typography>
 
       <Stack direction="row" sx={{ gap: "16px", flexWrap: "wrap", mb: 4 }}>

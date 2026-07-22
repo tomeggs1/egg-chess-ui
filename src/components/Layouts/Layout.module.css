@@ -50,8 +50,9 @@
   width: 100%;
   margin: 0 auto;
   padding: 2rem 1.5rem;
-  /* Dark overlay keeps foreground text legible over the image */
-  background-image: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25)), url("../../assets/images/sep09.jpg");
+  /* Light overlay lifts the near-black hex image toward charcoal */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.06)), url("../../assets/images/sep09.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

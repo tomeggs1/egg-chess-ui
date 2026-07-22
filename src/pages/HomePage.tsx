@@ -8,7 +8,7 @@ import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import LeaderboardRoundedIcon from "@mui/icons-material/LeaderboardRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { Button } from "../components/Button";
-import ChessPlusPlusLogo from "../assets/images/ChessPlusPlusLogoTrans.png";
+import AppLogo from "../assets/images/HPChessLogo.png";
 import {
   ACCENT_AMBER,
   ACCENT_BLUE,
@@ -85,12 +85,7 @@ export default function HomePage() {
     <Box sx={{ maxWidth: 1000, mx: "auto" }}>
       {/* Hero */}
       <Stack direction="column" sx={{ alignItems: "center", textAlign: "center", pt: { xs: 2, md: 5 }, pb: 5 }}>
-        <Box
-          component="img"
-          src={ChessPlusPlusLogo}
-          alt={APP_NAME}
-          sx={{ width: { xs: 180, md: 240 }, height: "auto", mb: 2 }}
-        />
+        <Box component="img" src={AppLogo} alt={APP_NAME} sx={{ width: { xs: 180, md: 240 }, height: "auto", mb: 2 }} />
         <Typography
           variant="h3"
           sx={{

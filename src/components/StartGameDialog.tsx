@@ -36,7 +36,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../constants";
-import { GameDefinitions } from "../data/gameDefinitions";
+import { useGameCatalog } from "../data/GameCatalogContext";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { useAuth } from "../auth/AuthContext";
 import { useFriends } from "../hooks/useFriends";
@@ -106,7 +106,7 @@ const TIMER_BY_ID = Object.fromEntries(TIMER_OPTIONS.map((t) => [t.id, t]));
 const TIMER_CATEGORY_ICON: Record<TimerCategory, SvgIconComponent> = {
   [TimerCategory.LIGHTNING]: BoltRoundedIcon,
   [TimerCategory.QUICK]: TimerRoundedIcon,
-  [TimerCategory.CLASSICAL]: HourglassEmptyRoundedIcon,
+  [TimerCategory.LONG]: HourglassEmptyRoundedIcon,
 };
 
 // Shared styling for the dark, glassy text fields.
@@ -135,6 +135,7 @@ const fieldSx = {
 };
 
 export default function StartGameDialog({ open, onClose, opponentType, presetFriend }: StartGameDialogProps) {
+  const { definitions: games } = useGameCatalog();
   const [form, setForm] = useState(emptyForm);
   const { player } = useAuth();
   const { data: friendships } = useFriends();
@@ -287,10 +288,10 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
               </Typography>
               <Box sx={{ minWidth: "250px" }}>
                 <Autocomplete
-                  options={GameDefinitions}
+                  options={games}
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  value={GameDefinitions.find((game) => game.id === form.gameType) ?? null}
+                  value={games.find((game) => game.id === form.gameType) ?? null}
                   onChange={(_event, value) => setForm((prev) => ({ ...prev, gameType: value?.id ?? "" }))}
                   fullWidth
                   sx={{
@@ -339,7 +340,7 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                     );
                   }}
                   renderInput={(params) => {
-                    const selected = GameDefinitions.find((game) => game.id === form.gameType);
+                    const selected = games.find((game) => game.id === form.gameType);
                     return (
                       <TextField
                         {...params}
@@ -565,13 +566,9 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                         isOptionEqualToValue={(option, value) => option.username === value.username}
                         // Offline friends can't be challenged (the service rejects it), so
                         // they're shown but not selectable. Only gate once presence loads.
-                        getOptionDisabled={(option) =>
-                          onlineFriends != null && !onlineFriends.has(option.username)
-                        }
+                        getOptionDisabled={(option) => onlineFriends != null && !onlineFriends.has(option.username)}
                         value={friends.find((f) => f.username === form.friendId) ?? null}
-                        onChange={(_event, value) =>
-                          setForm((prev) => ({ ...prev, friendId: value?.username ?? "" }))
-                        }
+                        onChange={(_event, value) => setForm((prev) => ({ ...prev, friendId: value?.username ?? "" }))}
                         disabled={presetFriend != null}
                         fullWidth
                         sx={{

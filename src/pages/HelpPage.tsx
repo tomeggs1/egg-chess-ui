@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { APP_NAME } from "../constants";
 
 type HelpTopic = {
   question: string;
@@ -56,7 +57,7 @@ export default function HelpPage() {
   return (
     <section>
       <h1>Help &amp; Support</h1>
-      <p>Answers to common questions about playing on Chess++.</p>
+      <p>Answers to common questions about playing on {APP_NAME}.</p>
 
       <h2>Frequently asked questions</h2>
       <dl>
@@ -71,7 +72,7 @@ export default function HelpPage() {
       <h2>Still need help?</h2>
       <p>
         Reach out to our team at{" "}
-        <a href="mailto:support@chessplusplus.example">support@chessplusplus.example</a> and we'll
+        <a href="mailto:support@hpchess.example">support@hpchess.example</a> and we'll
         get back to you.
       </p>
     </section>

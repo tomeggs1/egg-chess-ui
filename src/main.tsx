@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
 import { AuthProvider } from './auth/AuthContext'
+import { PieceThemeProvider } from './pieces/PieceThemeContext'
+import { BoardThemeProvider } from './board/BoardThemeContext'
 import { queryClient } from './queryClient'
 import './index.css'
 
@@ -17,7 +19,11 @@ createRoot(rootElement).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <PieceThemeProvider>
+            <BoardThemeProvider>
+              <App />
+            </BoardThemeProvider>
+          </PieceThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

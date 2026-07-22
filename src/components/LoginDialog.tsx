@@ -17,7 +17,7 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
-import ChessPlusPlusLogo from "../assets/images/ChessPlusPlusLogoTrans.png";
+import AppLogo from "../assets/images/HPChessLogo.png";
 import { Button } from "./Button";
 import { login } from "../api/auth";
 import { ApiError } from "../api/client";
@@ -26,6 +26,7 @@ import {
   ACCENT_BLUE,
   ACCENT_PURPLE,
   APP_NAME,
+  STORAGE_PREFIX,
   MAIN_BLUE_LIGHT,
   SURFACE_800,
   SURFACE_BORDER,
@@ -48,7 +49,7 @@ const emptyForm = {
 
 // Persisted across sessions when "Remember me" is checked, so the login dialog
 // can pre-fill the username on the next visit.
-const REMEMBERED_USERNAME_KEY = APP_NAME + ":rememberedUsername";
+const REMEMBERED_USERNAME_KEY = STORAGE_PREFIX + ":rememberedUsername";
 
 function loadRememberedUsername(): string {
   try {
@@ -145,7 +146,7 @@ export default function LoginDialog({ open, onClose }: LoginDialogProps) {
       setSubmitting(false);
       const detail =
         error instanceof ApiError
-          ? error.detail ?? `Login failed (${error.status}).`
+          ? (error.detail ?? `Login failed (${error.status}).`)
           : "Could not reach the service.";
       setMessage(detail);
     }
@@ -211,12 +212,7 @@ export default function LoginDialog({ open, onClose }: LoginDialogProps) {
           }}
         />
         <Stack direction="column" sx={{ position: "relative", alignItems: "center", gap: 1.25 }}>
-          <Box
-            component="img"
-            src={ChessPlusPlusLogo}
-            alt={APP_NAME}
-            sx={{ width: 100, height: "auto", display: "block" }}
-          />
+          <Box component="img" src={AppLogo} alt={APP_NAME} sx={{ width: 100, height: "auto", display: "block" }} />
           <Typography variant="h5" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
             Welcome back
           </Typography>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import Stack from "@mui/material/Stack";
 import SportsEsportsRoundedIcon from "@mui/icons-material/SportsEsportsRounded";
@@ -14,15 +14,18 @@ import CasinoRoundedIcon from "@mui/icons-material/CasinoRounded";
 import TodayRoundedIcon from "@mui/icons-material/TodayRounded";
 import HistoryIcon from "@mui/icons-material/History";
 import SettingsIcon from "@mui/icons-material/Settings";
+import GridOnRoundedIcon from "@mui/icons-material/GridOnRounded";
+import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded";
 import FriendsIcon from "@mui/icons-material/Group";
 import LogoutIcon from "@mui/icons-material/Logout";
 import type { SvgIconComponent } from "@mui/icons-material";
-import ChessPlusPlusLogo from "../../assets/images/ChessPlusPlusLogoTrans.png";
-import { ACCENT_BLUE, ACCENT_PURPLE, ACCENT_AMBER, ACCENT_GREEN, MAIN_PURPLE } from "../../constants";
+import AppLogo from "../../assets/images/HPChessLogo.png";
+import { ACCENT_BLUE, ACCENT_PURPLE, ACCENT_AMBER, ACCENT_GREEN, MAIN_PURPLE, APP_NAME } from "../../constants";
 import { Button } from "../Button";
 import SignUpDialog from "../SignUpDialog";
 import LoginDialog from "../LoginDialog";
 import FriendsDialog from "../FriendsDialog";
+import BoardSettingsDialog from "../BoardSettingsDialog";
 import { NotificationsBell, type NotificationTarget } from "../NotificationsBell";
 import { MessagesButton } from "../MessagesButton";
 import { useAuth } from "../../auth/AuthContext";
@@ -58,11 +61,31 @@ export default function NavBar() {
   const [signUpOpen, setSignUpOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [friendsOpen, setFriendsOpen] = useState(false);
+  const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
   const [friendsTab, setFriendsTab] = useState<NotificationTarget>("friends");
   const [startGameOpen, setStartGameOpen] = useState(false);
   const [opponentType, setOpponentType] = useState<OpponentType>(OpponentType.HUMAN);
   // The nav item whose submenu is currently open, plus the element it anchors to.
   const [submenu, setSubmenu] = useState<Submenu | null>(null);
+
+  // Close any open dialogs/menus on navigation — e.g. when an accepted challenge
+  // sends both players into the game, a lingering Friends/Start Game dialog would
+  // otherwise stay on top of the board.
+  const { pathname } = useLocation();
+  useEffect(() => {
+    setSignUpOpen(false);
+    setLoginOpen(false);
+    setFriendsOpen(false);
+    setBoardSettingsOpen(false);
+    setStartGameOpen(false);
+    setSubmenu(null);
+  }, [pathname]);
+
+  // Clear the session, then send the user back to the public homepage.
+  function handleLogout() {
+    logout();
+    navigate("/");
+  }
 
   const menuItems: MenuItem[] = [
     {
@@ -111,14 +134,28 @@ export default function NavBar() {
         { label: "Random Puzzles", to: "/puzzles/random", icon: CasinoRoundedIcon, iconColor: ACCENT_AMBER },
       ],
     },
-    { label: "Learn Chess", to: "/learn", icon: SchoolRoundedIcon, iconColor: ACCENT_PURPLE },
+    {
+      label: "Learn Chess",
+      to: "/learn",
+      icon: SchoolRoundedIcon,
+      iconColor: ACCENT_PURPLE,
+      subItems: [
+        { label: "Board Explorer", to: "/learn/board-explorer", icon: ExploreRoundedIcon, iconColor: ACCENT_PURPLE },
+      ],
+    },
     { label: "Rankings", to: "/rankings", icon: LeaderboardRoundedIcon, iconColor: ACCENT_GREEN },
   ];
 
   const settingsMenuItems: MenuItem[] = [
     { label: "Profile", to: "/settings/profile", icon: PersonRoundedIcon, iconColor: ACCENT_BLUE },
+    {
+      label: "Board Settings",
+      onClick: () => setBoardSettingsOpen(true),
+      icon: GridOnRoundedIcon,
+      iconColor: ACCENT_BLUE,
+    },
     { label: "Help & Support", to: "/help", icon: HelpOutlineRoundedIcon, iconColor: ACCENT_BLUE },
-    { label: "Log out", onClick: logout, icon: LogoutIcon, iconColor: ACCENT_BLUE },
+    { label: "Log out", onClick: handleLogout, icon: LogoutIcon, iconColor: ACCENT_BLUE },
   ];
 
   return (
@@ -142,7 +179,7 @@ export default function NavBar() {
       <Stack direction="column" sx={{ gap: "24px" }}>
         <Stack direction="column" sx={{ alignItems: "center" }}>
           <NavLink to={isAuthenticated ? "/dashboard" : "/"} style={{ textDecoration: "none" }}>
-            <img src={ChessPlusPlusLogo} alt="Chess++" style={{ width: "100%", marginTop: "0px" }} />
+            <img src={AppLogo} alt={APP_NAME} style={{ width: "100%", marginTop: "0px" }} />
           </NavLink>
         </Stack>
         <Stack direction="column" component="nav" sx={{ gap: "4px" }}>
@@ -217,10 +254,7 @@ export default function NavBar() {
       </Stack>
       {isAuthenticated ? (
         <Stack direction="column" sx={{ gap: "10px" }}>
-          <Stack
-            direction="row"
-            sx={{ padding: "10px 12px", borderRadius: "10px", backgroundColor: "#303030" }}
-          >
+          <Stack direction="row" sx={{ padding: "10px 12px", borderRadius: "10px", backgroundColor: "#303030" }}>
             <PlayerBadge
               username={player?.username ?? ""}
               avatarKey={player?.avatarKey}
@@ -301,6 +335,7 @@ export default function NavBar() {
       )}
       <StartGameDialog open={startGameOpen} onClose={() => setStartGameOpen(false)} opponentType={opponentType} />
       <FriendsDialog open={friendsOpen} onClose={() => setFriendsOpen(false)} initialTab={friendsTab} />
+      <BoardSettingsDialog open={boardSettingsOpen} onClose={() => setBoardSettingsOpen(false)} />
     </Stack>
   );
 }
