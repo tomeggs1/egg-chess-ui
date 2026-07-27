@@ -8,6 +8,7 @@ import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 import LeaderboardRoundedIcon from "@mui/icons-material/LeaderboardRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import CasinoRoundedIcon from "@mui/icons-material/CasinoRounded";
@@ -20,6 +21,7 @@ import FriendsIcon from "@mui/icons-material/Group";
 import LogoutIcon from "@mui/icons-material/Logout";
 import type { SvgIconComponent } from "@mui/icons-material";
 import AppLogo from "../../assets/images/HPChessLogo.png";
+import AppMark from "../../assets/images/blue-rook.png";
 import { ACCENT_BLUE, ACCENT_PURPLE, ACCENT_AMBER, ACCENT_GREEN, MAIN_PURPLE, APP_NAME } from "../../constants";
 import { Button } from "../Button";
 import SignUpDialog from "../SignUpDialog";
@@ -30,10 +32,18 @@ import { NotificationsBell, type NotificationTarget } from "../NotificationsBell
 import { MessagesButton } from "../MessagesButton";
 import { useAuth } from "../../auth/AuthContext";
 import { PlayerBadge } from "../PlayerBadge";
+import { PlayerAvatar } from "../PlayerAvatar";
 import { Menu } from "../Menu";
-import { IconButton } from "@mui/material";
+import { IconButton, Tooltip } from "@mui/material";
 import StartGameDialog from "../StartGameDialog";
 import { OpponentType } from "../../data/types";
+
+// Sidebar widths for the two states; collapsing swaps to a slim icon rail.
+const NAV_WIDTH_EXPANDED = 230;
+const NAV_WIDTH_COLLAPSED = 72;
+// Persisted collapse preference. Only applies while signed in — signed-out
+// users always see the full-width bar.
+const NAV_COLLAPSED_KEY = "navCollapsed";
 
 type MenuItem = {
   label: string;
@@ -67,6 +77,39 @@ export default function NavBar() {
   const [opponentType, setOpponentType] = useState<OpponentType>(OpponentType.HUMAN);
   // The nav item whose submenu is currently open, plus the element it anchors to.
   const [submenu, setSubmenu] = useState<Submenu | null>(null);
+  // Collapsed (icon-rail) preference, persisted. Gated on auth so signed-out
+  // users always get the full-width bar regardless of the stored value.
+  const [collapsedPref, setCollapsedPref] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(NAV_COLLAPSED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const collapsed = isAuthenticated && collapsedPref;
+  const toggleCollapsed = () => {
+    setCollapsedPref((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(NAV_COLLAPSED_KEY, String(next));
+      } catch {
+        // Ignore persistence failures; the in-memory choice still applies.
+      }
+      return next;
+    });
+  };
+
+  // Tooltips only earn their keep on the collapsed icon rail — in the expanded
+  // bar the labels are visible and hover tips over the horizontal icon row are
+  // just noise. Wrap a single element; a no-op when expanded.
+  const railTip = (label: string, node: React.ReactElement) =>
+    collapsed ? (
+      <Tooltip title={label} placement="right">
+        {node}
+      </Tooltip>
+    ) : (
+      node
+    );
 
   // Close any open dialogs/menus on navigation — e.g. when an accepted challenge
   // sends both players into the game, a lingering Friends/Start Game dialog would
@@ -163,10 +206,10 @@ export default function NavBar() {
       direction="column"
       sx={{
         backgroundColor: "#222222",
-        width: "230px",
+        width: `${collapsed ? NAV_WIDTH_COLLAPSED : NAV_WIDTH_EXPANDED}px`,
         height: "100vh",
         color: "#ffffff",
-        padding: "16px",
+        padding: collapsed ? "16px 8px" : "16px",
         justifyContent: "space-between",
         // Pin the sidebar so it stays in view while the main content scrolls.
         position: "sticky",
@@ -174,44 +217,81 @@ export default function NavBar() {
         alignSelf: "flex-start",
         flexShrink: 0,
         overflowY: "auto",
+        overflowX: "hidden",
+        transition: "width 0.2s ease, padding 0.2s ease",
       }}
     >
       <Stack direction="column" sx={{ gap: "24px" }}>
+        {isAuthenticated && (
+          <Stack direction="row" sx={{ justifyContent: collapsed ? "center" : "flex-end", marginBottom: "-20px" }}>
+            {railTip(
+              "Expand",
+              <IconButton
+                onClick={toggleCollapsed}
+                size="small"
+                aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+                sx={{ color: "#b5b5b5", "&:hover": { color: "#ffffff" } }}
+              >
+                {collapsed ? <ChevronRightRoundedIcon /> : <ChevronLeftRoundedIcon />}
+              </IconButton>,
+            )}
+          </Stack>
+        )}
         <Stack direction="column" sx={{ alignItems: "center" }}>
-          <NavLink to={isAuthenticated ? "/dashboard" : "/"} style={{ textDecoration: "none" }}>
-            <img src={AppLogo} alt={APP_NAME} style={{ width: "100%", marginTop: "0px" }} />
-          </NavLink>
+          {railTip(
+            APP_NAME,
+            <NavLink to={isAuthenticated ? "/dashboard" : "/"} style={{ textDecoration: "none" }}>
+              <img
+                src={collapsed ? AppMark : AppLogo}
+                alt={APP_NAME}
+                style={{ width: collapsed ? "40px" : "100%", marginTop: "0px", display: "block" }}
+              />
+            </NavLink>,
+          )}
         </Stack>
         <Stack direction="column" component="nav" sx={{ gap: "4px" }}>
           {menuItems.map((item) => {
             const { label, to, icon: Icon, iconColor, subItems } = item;
             const hasSubItems = subItems != null && subItems.length > 0;
 
+            // Shared row style; collapsed centers the icon and hides the label.
+            const rowSx = (active: boolean) => ({
+              alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
+              gap: collapsed ? 0 : "12px",
+              padding: "10px 12px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              color: active ? "#ffffff" : "#b5b5b5",
+              backgroundColor: active ? "#3a3a3a" : "transparent",
+              fontWeight: active ? 600 : 500,
+              transition: "background-color 0.15s ease, color 0.15s ease",
+              "&:hover": { backgroundColor: "#303030", color: "#ffffff" },
+            });
+            // When collapsed, a tooltip stands in for the hidden label.
+            const withTip = (node: React.ReactElement) =>
+              collapsed ? (
+                <Tooltip key={label} title={label} placement="right">
+                  {node}
+                </Tooltip>
+              ) : (
+                node
+              );
+
             // Items with subItems open a flyout Menu; the rest navigate directly.
             if (hasSubItems) {
               const isOpen = submenu?.items === subItems;
-              return (
+              return withTip(
                 <Stack
                   key={label}
                   direction="row"
                   onClick={(e) => setSubmenu({ anchor: e.currentTarget, items: subItems })}
-                  sx={{
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    cursor: "pointer",
-                    color: isOpen ? "#ffffff" : "#b5b5b5",
-                    backgroundColor: isOpen ? "#3a3a3a" : "transparent",
-                    fontWeight: isOpen ? 600 : 500,
-                    transition: "background-color 0.15s ease, color 0.15s ease",
-                    "&:hover": { backgroundColor: "#303030", color: "#ffffff" },
-                  }}
+                  sx={rowSx(isOpen)}
                 >
                   <Icon fontSize="small" htmlColor={iconColor} />
-                  <span style={{ flex: 1 }}>{label}</span>
-                  <ChevronRightRoundedIcon fontSize="small" />
-                </Stack>
+                  {!collapsed && <span style={{ flex: 1 }}>{label}</span>}
+                  {!collapsed && <ChevronRightRoundedIcon fontSize="small" />}
+                </Stack>,
               );
             }
 
@@ -220,25 +300,14 @@ export default function NavBar() {
                 key={label}
                 to={to ?? "/"}
                 style={{ textDecoration: "none" }}
-                children={({ isActive }) => (
-                  <Stack
-                    direction="row"
-                    sx={{
-                      alignItems: "center",
-                      gap: "12px",
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      color: isActive ? "#ffffff" : "#b5b5b5",
-                      backgroundColor: isActive ? "#3a3a3a" : "transparent",
-                      fontWeight: isActive ? 600 : 500,
-                      transition: "background-color 0.15s ease, color 0.15s ease",
-                      "&:hover": { backgroundColor: "#303030", color: "#ffffff" },
-                    }}
-                  >
-                    <Icon fontSize="small" htmlColor={iconColor} />
-                    <span>{label}</span>
-                  </Stack>
-                )}
+                children={({ isActive }) =>
+                  withTip(
+                    <Stack direction="row" sx={rowSx(isActive)}>
+                      <Icon fontSize="small" htmlColor={iconColor} />
+                      {!collapsed && <span>{label}</span>}
+                    </Stack>,
+                  )
+                }
               />
             );
           })}
@@ -254,43 +323,71 @@ export default function NavBar() {
       </Stack>
       {isAuthenticated ? (
         <Stack direction="column" sx={{ gap: "10px" }}>
-          <Stack direction="row" sx={{ padding: "10px 12px", borderRadius: "10px", backgroundColor: "#303030" }}>
-            <PlayerBadge
-              username={player?.username ?? ""}
-              avatarKey={player?.avatarKey}
-              rating={player?.rating}
-              size={32}
-            />
+          <Stack
+            direction="row"
+            sx={{
+              padding: "10px 12px",
+              borderRadius: "10px",
+              backgroundColor: "#303030",
+              justifyContent: collapsed ? "center" : "flex-start",
+            }}
+          >
+            {collapsed ? (
+              <PlayerAvatar username={player?.username ?? ""} avatarKey={player?.avatarKey} size={32} />
+            ) : (
+              <PlayerBadge
+                username={player?.username ?? ""}
+                avatarKey={player?.avatarKey}
+                rating={player?.rating}
+                size={32}
+              />
+            )}
           </Stack>
-          <Stack direction="row" sx={{ justifyContent: "space-between", gap: "10px", marginTop: "-5px" }}>
-            <IconButton
-              onClick={() => {
-                setFriendsTab("friends");
-                setFriendsOpen(true);
-              }}
-              aria-label="Friends"
-            >
-              <FriendsIcon sx={{ color: ACCENT_BLUE }} />
-            </IconButton>
-            <MessagesButton />
+          <Stack
+            direction={collapsed ? "column" : "row"}
+            sx={{
+              justifyContent: collapsed ? "center" : "space-between",
+              alignItems: "center",
+              gap: "10px",
+              marginTop: "-5px",
+            }}
+          >
+            {railTip(
+              "Friends",
+              <IconButton
+                onClick={() => {
+                  setFriendsTab("friends");
+                  setFriendsOpen(true);
+                }}
+                aria-label="Friends"
+              >
+                <FriendsIcon sx={{ color: ACCENT_BLUE }} />
+              </IconButton>,
+            )}
+            <MessagesButton tooltip={collapsed ? "Messages" : undefined} />
             <NotificationsBell
+              tooltip={collapsed ? "Notifications" : undefined}
               onNavigate={(target) => {
                 setFriendsTab(target);
                 setFriendsOpen(true);
               }}
             />
-            <IconButton
-              onClick={(e) =>
-                setSubmenu({
-                  anchor: e.currentTarget,
-                  items: settingsMenuItems,
-                  anchorOrigin: { vertical: "top", horizontal: "center" },
-                  transformOrigin: { vertical: "bottom", horizontal: "center" },
-                })
-              }
-            >
-              <SettingsIcon sx={{ color: ACCENT_BLUE }} />
-            </IconButton>
+            {railTip(
+              "Settings",
+              <IconButton
+                aria-label="Settings"
+                onClick={(e) =>
+                  setSubmenu({
+                    anchor: e.currentTarget,
+                    items: settingsMenuItems,
+                    anchorOrigin: { vertical: "top", horizontal: "center" },
+                    transformOrigin: { vertical: "bottom", horizontal: "center" },
+                  })
+                }
+              >
+                <SettingsIcon sx={{ color: ACCENT_BLUE }} />
+              </IconButton>,
+            )}
           </Stack>
         </Stack>
       ) : (

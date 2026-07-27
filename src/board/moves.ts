@@ -244,6 +244,21 @@ export function isSquareAttacked(
   return pieces.some((p) => p.color === byColor && attacksSquare(p, square, occupied, defs));
 }
 
+/**
+ * The pieces of `byColor` that attack the square — e.g. the piece(s) giving
+ * check to a king. Returns all attackers, so a double check yields both (and a
+ * discovered check finds the real attacker, not whichever piece just moved).
+ */
+export function attackersOf(
+  pieces: PlacedPiece[],
+  square: { file: number; rank: number },
+  byColor: PieceColor,
+  defs: DefMap,
+): PlacedPiece[] {
+  const occupied = new Set(pieces.map((p) => `${p.file},${p.rank}`));
+  return pieces.filter((p) => p.color === byColor && attacksSquare(p, square, occupied, defs));
+}
+
 /** The square of `color`'s king, or null. */
 export function findKingSquare(pieces: PlacedPiece[], color: PieceColor): { file: number; rank: number } | null {
   const king = pieces.find((p) => p.type === "king" && p.color === color);

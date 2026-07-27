@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, Box, IconButton, Popover, Stack, Typography } from "@mui/material";
+import { Badge, Box, IconButton, Popover, Stack, Tooltip, Typography } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNotifications, useMarkNotificationsRead, useUnreadCount } from "../hooks/useNotifications";
 import type { NotificationResponse } from "../api/notifications";
@@ -19,6 +19,9 @@ export type NotificationTarget = "friends" | "requests";
 interface NotificationsBellProps {
   // Opens the friends dialog on the given tab (e.g. a friend request → Requests).
   onNavigate: (target: NotificationTarget) => void;
+  // Optional tooltip label. Wrapped here rather than by the caller because this
+  // component renders a fragment, which a surrounding Tooltip can't attach to.
+  tooltip?: string;
 }
 
 // Compact relative time, e.g. "just now", "5m", "3h", "2d".
@@ -51,7 +54,7 @@ function targetFor(n: NotificationResponse): NotificationTarget {
   return n.type === "FRIEND_REQUEST" ? "requests" : "friends";
 }
 
-export function NotificationsBell({ onNavigate }: NotificationsBellProps) {
+export function NotificationsBell({ onNavigate, tooltip }: NotificationsBellProps) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const unreadCount = useUnreadCount();
   const { data: notifications } = useNotifications();
@@ -75,11 +78,22 @@ export function NotificationsBell({ onNavigate }: NotificationsBellProps) {
 
   return (
     <>
-      <IconButton onClick={handleOpen} aria-label="Notifications">
-        <Badge badgeContent={unread} max={99} color="error">
-          <NotificationsIcon sx={{ color: ACCENT_BLUE }} />
-        </Badge>
-      </IconButton>
+      {(() => {
+        const button = (
+          <IconButton onClick={handleOpen} aria-label="Notifications">
+            <Badge badgeContent={unread} max={99} color="error">
+              <NotificationsIcon sx={{ color: ACCENT_BLUE }} />
+            </Badge>
+          </IconButton>
+        );
+        return tooltip ? (
+          <Tooltip title={tooltip} placement="right">
+            {button}
+          </Tooltip>
+        ) : (
+          button
+        );
+      })()}
 
       <Popover
         open={open}

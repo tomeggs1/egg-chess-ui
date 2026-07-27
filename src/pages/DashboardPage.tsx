@@ -6,6 +6,8 @@ import LeaderboardRoundedIcon from "@mui/icons-material/LeaderboardRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { useAuth } from "../auth/AuthContext";
+import { useRecentGames } from "../hooks/useGameHistory";
+import { GameHistoryRow } from "../components/GameHistoryRow";
 import {
   ACCENT_AMBER,
   ACCENT_BLUE,
@@ -56,6 +58,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 
 export default function DashboardPage() {
   const { player, loading, isAuthenticated } = useAuth();
+  const { data: recentGames } = useRecentGames(5);
 
   if (loading) {
     return (
@@ -80,7 +83,7 @@ export default function DashboardPage() {
       </Typography>
 
       <Stack direction="row" sx={{ gap: "16px", flexWrap: "wrap", mb: 4 }}>
-        <StatCard label="Rating" value={player.rating} />
+        <StatCard label="Rating (Quick)" value={player.rating} />
         {player.country && <StatCard label="Country" value={player.country} />}
         <StatCard label="Member since" value={new Date(player.createdAt).toLocaleDateString()} />
       </Stack>
@@ -129,6 +132,24 @@ export default function DashboardPage() {
           );
         })}
       </Box>
+
+      {recentGames && recentGames.length > 0 && (
+        <Box sx={{ mt: 4 }}>
+          <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
+              Recent games
+            </Typography>
+            <RouterLink to="/play/history" style={{ textDecoration: "none", color: ACCENT_BLUE, fontSize: 14 }}>
+              View all
+            </RouterLink>
+          </Stack>
+          <Stack direction="column" sx={{ gap: "8px" }}>
+            {recentGames.map((game) => (
+              <GameHistoryRow key={game.id} game={game} perspective={player.username} />
+            ))}
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 }

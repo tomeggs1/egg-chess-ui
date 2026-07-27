@@ -1,8 +1,11 @@
-import { Box, Dialog, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Dialog, IconButton, Stack, Switch, Typography } from "@mui/material";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import GridOnRoundedIcon from "@mui/icons-material/GridOnRounded";
+import VolumeUpRoundedIcon from "@mui/icons-material/VolumeUpRounded";
+import VolumeOffRoundedIcon from "@mui/icons-material/VolumeOffRounded";
 import { PieceThemePicker } from "./PieceThemePicker";
 import { BoardThemePicker } from "./BoardThemePicker";
+import { useSound } from "../audio/SoundContext";
 import {
   ACCENT_BLUE,
   ACCENT_PURPLE,
@@ -24,6 +27,7 @@ interface BoardSettingsDialogProps {
  * persist locally (see PieceThemeContext) — there is no save step.
  */
 export default function BoardSettingsDialog({ open, onClose }: BoardSettingsDialogProps) {
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
   return (
     <Dialog
       open={open}
@@ -85,6 +89,30 @@ export default function BoardSettingsDialog({ open, onClose }: BoardSettingsDial
           Pieces
         </Typography>
         <PieceThemePicker />
+
+        <Typography variant="subtitle2" sx={{ color: TEXT_PRIMARY, mt: 3 }}>
+          Sound
+        </Typography>
+        <Stack
+          direction="row"
+          sx={{ alignItems: "center", justifyContent: "space-between", mt: 1 }}
+        >
+          <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+            {soundEnabled ? (
+              <VolumeUpRoundedIcon sx={{ color: ACCENT_BLUE }} />
+            ) : (
+              <VolumeOffRoundedIcon sx={{ color: TEXT_MUTED }} />
+            )}
+            <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
+              Play a sound when a move is made
+            </Typography>
+          </Stack>
+          <Switch
+            checked={soundEnabled}
+            onChange={(e) => setSoundEnabled(e.target.checked)}
+            slotProps={{ input: { "aria-label": "Move sounds" } }}
+          />
+        </Stack>
       </Box>
     </Dialog>
   );

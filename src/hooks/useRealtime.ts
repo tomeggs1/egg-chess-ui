@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
 import { getAuthToken } from "../auth/session";
 import { notificationKeys } from "./useNotifications";
@@ -9,7 +9,19 @@ import { friendKeys } from "./useFriends";
 import { presenceKeys } from "./usePresence";
 import { messageKeys } from "./useMessages";
 import { challengeKeys } from "./useChallenges";
+import type { ChallengeResponse } from "../api/challenges";
 import { resolveWsUrl } from "../api/ws";
+
+/**
+ * Upsert a just-received pending challenge into the incoming-challenges cache.
+ * A PENDING challenge is only ever pushed to its challengee, so it always
+ * belongs in the incoming list. Idempotent — a later refetch reconciles it.
+ */
+function seedPending(queryClient: QueryClient, challenge: ChallengeResponse) {
+  queryClient.setQueryData<ChallengeResponse[]>(challengeKeys.incoming(), (old = []) =>
+    old.some((c) => c.id === challenge.id) ? old : [...old, challenge],
+  );
+}
 
 /**
  * One STOMP-over-WebSocket connection for the whole app, opened while
@@ -79,18 +91,26 @@ export function useRealtime() {
         });
 
         client.subscribe("/user/queue/challenges", (message) => {
-          // Any challenge transition (received / accepted / declined / canceled /
-          // expired) changes the pending lists.
-          queryClient.invalidateQueries({ queryKey: challengeKeys.all });
           try {
-            const challenge = JSON.parse(message.body) as { status?: string; gameId?: number | null };
+            const challenge = JSON.parse(message.body) as ChallengeResponse;
+            // Seed the pending lists straight from the payload so the prompt
+            // appears immediately — without depending on a refetch that could
+            // race (and, if missed, only recover after the slow poll, by which
+            // point the challenge may have lapsed). A terminal status is handled
+            // by the invalidation below (a refetch drops it from the lists).
+            if (challenge.status === "PENDING") {
+              seedPending(queryClient, challenge);
+            }
             // On accept, both players are taken into the game.
             if (challenge.status === "ACCEPTED" && challenge.gameId != null) {
               navigate(`/game/${challenge.gameId}`);
             }
           } catch {
-            // Non-JSON payload — the invalidate above still ran.
+            // Non-JSON payload — the invalidate below still runs.
           }
+          // Any challenge transition (received / accepted / declined / canceled /
+          // expired) changes the pending lists; reconcile against the server.
+          queryClient.invalidateQueries({ queryKey: challengeKeys.all });
         });
       },
     });

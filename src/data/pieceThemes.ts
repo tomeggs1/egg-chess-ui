@@ -20,6 +20,15 @@ export interface PieceTheme {
    * proportions. Falls back to PIECE_HEIGHT_RATIOS for any type not listed.
    */
   heightRatios?: Partial<Record<PieceType, number>>;
+  /**
+   * True for sets whose sprites are drawn centered inside a uniform (square)
+   * canvas, with each piece's relative size already baked into the art (e.g.
+   * Neo, Mono, Basic). Such sets are rendered centered and cell-filling — the
+   * king-relative PIECE_HEIGHT_RATIOS would double-shrink them and make them
+   * float above the square. Tall art that bleeds to the canvas edges leaves
+   * this unset and is sized by the ratios instead.
+   */
+  squareCanvas?: boolean;
 }
 
 /**
@@ -55,10 +64,10 @@ export const PieceThemes: PieceTheme[] = [
   { id: "clash-style", name: "Clash Style", dir: "ClashStyle" },
   { id: "clash2", name: "Clash 2", dir: "Clash2" },
   { id: "simple3d", name: "Simple 3D", dir: "Simple3D" },
-  { id: "neo", name: "Neo", dir: "Neo" },
+  { id: "neo", name: "Neo", dir: "Neo", squareCanvas: true },
   { id: "flat", name: "Flat", dir: "Flat" },
-  { id: "mono", name: "Mono", dir: "Mono" },
-  { id: "basic", name: "Basic", dir: "Basic" },
+  { id: "mono", name: "Mono", dir: "Mono", squareCanvas: true },
+  { id: "basic", name: "Basic", dir: "Basic", squareCanvas: true },
 ];
 
 export const DEFAULT_THEME_ID = "elegant-blue-gold";

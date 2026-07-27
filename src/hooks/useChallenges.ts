@@ -17,12 +17,16 @@ export const challengeKeys = {
 }
 
 // Pending challenges are delivered live over WebSocket (and reconciled on
-// reconnect); the interval is a slow fallback.
+// reconnect); the interval is a fallback. It must stay below the server's
+// challenge TTL (45s) so a challenge missed by a live push is still picked up
+// while it's pending, rather than lapsing unseen between polls.
+const CHALLENGE_POLL_MS = 30_000
+
 export function useIncomingChallenges() {
   return useQuery({
     queryKey: challengeKeys.incoming(),
     queryFn: getIncomingChallenges,
-    refetchInterval: 60_000,
+    refetchInterval: CHALLENGE_POLL_MS,
   })
 }
 
@@ -30,7 +34,7 @@ export function useOutgoingChallenges() {
   return useQuery({
     queryKey: challengeKeys.outgoing(),
     queryFn: getOutgoingChallenges,
-    refetchInterval: 60_000,
+    refetchInterval: CHALLENGE_POLL_MS,
   })
 }
 

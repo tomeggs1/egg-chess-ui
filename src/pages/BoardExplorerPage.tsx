@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, CircularProgress, Stack, Typography } from "@mui/material";
 import { Board, type BoardArrow } from "../board/Board";
 import { edgeColor } from "../board/edgeColor";
@@ -27,6 +27,7 @@ import type { PieceColor, PieceType } from "../data/pieceThemes";
 import type { GameDefinition, PieceDefinition } from "../data/types";
 import { useGameCatalog } from "../data/GameCatalogContext";
 import { findOpening } from "../data/openings";
+import { useSound } from "../audio/SoundContext";
 import { TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 
 /**
@@ -71,6 +72,11 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
   // Whether to draw the top suggested moves as arrows on the board.
   const [showArrows, setShowArrows] = useState(false);
 
+  const { play } = useSound();
+  // Set when a move is committed so the outcome-driven effect below plays a
+  // sound only for real moves — not for history navigation or reset.
+  const justMoved = useRef(false);
+
   const game = definitions.find((g) => g.id === gameId) ?? standardDef;
   const isStandard = game.id === "standard";
 
@@ -93,6 +99,9 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
   // Board + side-to-move are derived from the viewed ply.
   const board = currentPly < 0 ? startBoard : history[currentPly].board;
   const turn: PieceColor = currentPly < 0 ? "white" : history[currentPly].turn;
+  // Highlight the from/to of the move that produced the viewed position.
+  const lastMove =
+    currentPly < 0 ? null : { from: history[currentPly].from, to: history[currentPly].to };
 
   // Detected opening — standard game only (undefined hides the row for variants).
   const opening = useMemo(
@@ -154,6 +163,22 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
     return inCheck ? "check" : null;
   }, [board, turn, defs, legalTargetsFor]);
 
+  // Play a subtle sound for each committed move, using the freshly-derived
+  // outcome for the new position. Gated by justMoved so stepping through history
+  // or resetting stays silent. Priority mirrors the live game: end → check →
+  // capture → castle → move.
+  useEffect(() => {
+    if (!justMoved.current) return;
+    justMoved.current = false;
+    const last = currentPly >= 0 ? history[currentPly] : undefined;
+    if (outcome === "checkmate" || outcome === "stalemate") play("gameEnd");
+    else if (outcome === "check") play("check");
+    else if (last?.captured) play("capture");
+    else if (last && last.type === "king" && Math.abs(last.to.file - last.from.file) >= 2) play("castle");
+    else play("move");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history, currentPly, outcome]);
+
   // Full FEN of the viewed position (standard game only) — keys the explorer.
   const currentFen = useMemo(
     () => (isStandard ? fenAtPly(history, currentPly) : null),
@@ -211,6 +236,7 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
     setSelected(null);
     setHintMove(null);
     setGameOverDismissed(false);
+    justMoved.current = true; // let the effect below play the move sound
   };
 
   // Play a suggested move (UCI). Resolves it to a legal MoveTarget so castling /
@@ -352,6 +378,7 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
             moveTargets={moveTargets}
             checkSquare={checkSquare}
             hintMove={hintMove}
+            lastMove={lastMove}
             arrows={suggestionArrows}
             onSquareClick={handleSquareClick}
           />

@@ -58,7 +58,7 @@ interface StartGameDialogProps {
 const emptyForm = {
   gameType: "standard",
   timer: "10+0",
-  opponentSubType: "random",
+  opponentSubType: "friend",
   friendId: "",
   rated: true,
   matchRatingFrom: -100 as number | null,
@@ -103,7 +103,7 @@ const TIMER_OPTIONS = Object.values(TimerOptions).flat();
 const TIMER_OPTION_IDS = TIMER_OPTIONS.map((t) => t.id);
 const TIMER_BY_ID = Object.fromEntries(TIMER_OPTIONS.map((t) => [t.id, t]));
 
-const TIMER_CATEGORY_ICON: Record<TimerCategory, SvgIconComponent> = {
+export const TIMER_CATEGORY_ICON: Record<TimerCategory, SvgIconComponent> = {
   [TimerCategory.LIGHTNING]: BoltRoundedIcon,
   [TimerCategory.QUICK]: TimerRoundedIcon,
   [TimerCategory.LONG]: HourglassEmptyRoundedIcon,
@@ -202,6 +202,8 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
         ? "Could not send the challenge."
         : null;
   const submitting = createChallenge.isPending;
+  // Random matchmaking isn't implemented yet — surface a message and block submit.
+  const randomUnavailable = opponentType === OpponentType.HUMAN && form.opponentSubType === "random";
 
   return (
     <Dialog
@@ -759,6 +761,20 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                         </TextField>
                       </Stack>
                     )}
+                    {randomUnavailable && (
+                      <Alert
+                        severity="warning"
+                        variant="outlined"
+                        sx={{
+                          marginTop: "10px",
+                          color: TEXT_PRIMARY,
+                          borderColor: "rgba(245, 158, 11, 0.5)",
+                          "& .MuiAlert-icon": { color: "#f59e0b" },
+                        }}
+                      >
+                        Random matchmaking not yet available
+                      </Alert>
+                    )}
                   </Stack>
                 ) : (
                   <Typography variant="body2" sx={{ color: TEXT_PRIMARY }}>
@@ -927,7 +943,7 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                 type="primary"
                 isSubmit
                 form={DIALOG_FORM_ID}
-                isDisabled={isFormComplete() === false || submitting}
+                isDisabled={isFormComplete() === false || submitting || randomUnavailable}
                 label={submitting ? "Sending…" : form.opponentSubType === "friend" ? "Send Challenge" : "Start Game"}
                 style={{ backgroundColor: MAIN_PURPLE, padding: "10px 24px" }}
               />

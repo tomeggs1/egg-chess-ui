@@ -1,3 +1,34 @@
+import { getAlpha2Code, registerLocale, type LocaleData } from "i18n-iso-countries";
+import enLocale from "i18n-iso-countries/langs/en.json";
+
+// Register English names once so getAlpha2Code can resolve our stored display
+// names to ISO codes (used for flags).
+registerLocale(enLocale as unknown as LocaleData);
+
+// A few of our display names don't match i18n-iso-countries' canonical English
+// names; map those explicitly. Everything else resolves via the library.
+const CODE_OVERRIDES: Record<string, string> = {
+  Brunei: "BN",
+  "Cabo Verde": "CV",
+  "Congo (Brazzaville)": "CG",
+  "Congo (Kinshasa)": "CD",
+  Laos: "LA",
+  Micronesia: "FM",
+  Moldova: "MD",
+  Syria: "SY",
+  "Vatican City": "VA",
+};
+
+/**
+ * ISO 3166-1 alpha-2 code (lowercase) for a stored country name, or null when
+ * the name is empty/unknown. Lowercase so it drops straight into flag URLs.
+ */
+export function countryCode(name?: string | null): string | null {
+  if (!name) return null;
+  const code = CODE_OVERRIDES[name] ?? getAlpha2Code(name, "en");
+  return code ? code.toLowerCase() : null;
+}
+
 // ISO 3166 country names, used to populate the Country select in the sign-up
 // dialog. Stored on the player as a plain string (see RegisterPlayerRequest),
 // so we submit the display name directly.

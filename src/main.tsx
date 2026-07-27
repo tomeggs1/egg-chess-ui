@@ -12,6 +12,7 @@ import App from './App.tsx'
 import { AuthProvider } from './auth/AuthContext'
 import { PieceThemeProvider } from './pieces/PieceThemeContext'
 import { BoardThemeProvider } from './board/BoardThemeContext'
+import { SoundProvider } from './audio/SoundContext'
 import { queryClient } from './queryClient'
 import './index.css'
 
@@ -27,7 +28,9 @@ createRoot(rootElement).render(
         <AuthProvider>
           <PieceThemeProvider>
             <BoardThemeProvider>
-              <App />
+              <SoundProvider>
+                <App />
+              </SoundProvider>
             </BoardThemeProvider>
           </PieceThemeProvider>
         </AuthProvider>

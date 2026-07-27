@@ -3,13 +3,17 @@ import { useParams } from "react-router-dom";
 import { Box, CircularProgress, Stack, Typography } from "@mui/material";
 import { Board } from "../board/Board";
 import { parsePlacement, reconcilePieceIds, type PlacedPiece } from "../board/fen";
-import type { MoveTarget } from "../board/moves";
+import { attackersOf, type MoveTarget } from "../board/moves";
 import OutlinedFlagRoundedIcon from "@mui/icons-material/OutlinedFlagRounded";
 import { PromotionPicker } from "../components/PromotionPicker";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { PlayerBadge } from "../components/PlayerBadge";
+import { PlayerAvatar } from "../components/PlayerAvatar";
 import { GameMovesPanel } from "../components/GameMovesPanel";
+import { WinConfetti } from "../components/WinConfetti";
+import StartGameDialog from "../components/StartGameDialog";
 import { Button } from "../components/Button";
+import ScrollImage from "../assets/images/long-scroll.webp";
 import { uiPieceSrc } from "../data/pieceAssets";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -22,10 +26,19 @@ import {
   useSubmitMove,
 } from "../hooks/useGame";
 import { useGameChannel } from "../hooks/useGameChannel";
+import { useFriends } from "../hooks/useFriends";
+import { useSound } from "../audio/SoundContext";
 import type { PieceColor, PieceType } from "../data/pieceThemes";
+import { OpponentType, type PieceDefinition } from "../data/types";
+import { useGameCatalog } from "../data/GameCatalogContext";
+import type { PlayerSummary } from "../api/friends";
 import {
+  ACCENT_PURPLE,
   COLOR_ERROR,
+  COLOR_SUCCESS,
   MAIN_BLUE_LIGHT,
+  MAIN_PURPLE,
+  RESULT_ACCENT,
   SURFACE_600,
   SURFACE_BLACK,
   SURFACE_BORDER,
@@ -34,6 +47,57 @@ import {
 } from "../constants";
 
 type Square = { file: number; rank: number };
+
+/**
+ * Whether the given move was a castle: a king stepping two or more files
+ * sideways. The mover's type is read from the position just before the move
+ * (placements[p] is the position after ply p, with [0] the start), so this is
+ * correct regardless of which ply the user is currently reviewing.
+ */
+function isCastle(state: import("../api/games").GameState, move: import("../api/games").WireMove | undefined): boolean {
+  if (!move || Math.abs(move.toFile - move.fromFile) < 2) return false;
+  const before = state.placements?.[state.moves.length - 1];
+  if (!before) return false;
+  const mover = parsePlacement(before).find((p) => p.file === move.fromFile && p.rank === move.fromRank);
+  return mover?.type === "king";
+}
+
+/**
+ * Ceremonial result text for the game-over scroll: a headline (how it ended)
+ * and a subline (who won, or the draw method). Neutral framing — WHITE / BLACK,
+ * not viewer-relative — since it reads like a proclamation.
+ */
+function scrollResult(state: import("../api/games").GameState): { headline: string; sub: string } {
+  const r = state.result;
+  if (r === "1-0" || r === "0-1") {
+    const winner = r === "1-0" ? "WHITE WINS" : "BLACK WINS";
+    const headline =
+      state.endReason === "RESIGNATION"
+        ? "RESIGNATION"
+        : state.endReason === "TIMEOUT"
+          ? "TIME OUT"
+          : state.endReason === "CHECKMATE" || state.outcome === "CHECKMATE"
+            ? "CHECKMATE!"
+            : "VICTORY";
+    return { headline, sub: winner };
+  }
+  if (r === "1/2-1/2") {
+    const sub =
+      state.endReason === "STALEMATE"
+        ? "STALEMATE"
+        : state.endReason === "AGREEMENT"
+          ? "BY AGREEMENT"
+          : state.endReason === "THREEFOLD_REPETITION"
+            ? "BY REPETITION"
+            : state.endReason === "INSUFFICIENT_MATERIAL"
+              ? "INSUFFICIENT MATERIAL"
+              : state.endReason === "TIMEOUT"
+                ? "BY TIMEOUT"
+                : "";
+    return { headline: "DRAW", sub };
+  }
+  return { headline: "GAME OVER", sub: "" };
+}
 
 /**
  * Live game screen. Server-authoritative: the board renders the position the
@@ -52,6 +116,8 @@ export default function GamePage() {
   const offerDraw = useOfferDraw(id);
   const acceptDraw = useAcceptDraw(id);
   const declineDraw = useDeclineDraw(id);
+  const { play } = useSound();
+  const { definitions } = useGameCatalog();
 
   const [selected, setSelected] = useState<Square | null>(null);
   const [resignOpen, setResignOpen] = useState(false);
@@ -95,11 +161,60 @@ export default function GamePage() {
     state && me === state.whiteUsername ? "white" : state && me === state.blackUsername ? "black" : null;
   const isMyTurn = !!state && state.status === "ACTIVE" && myColor != null && state.sideToMove === myColor;
 
+  // The opponent, resolved from the friends list (human games are friends-only,
+  // so this is present for a normal game and absent for a bot game) — used to
+  // pre-target the rematch challenge.
+  const { data: friendships } = useFriends();
+  const [rematchOpen, setRematchOpen] = useState(false);
+  const opponent = useMemo<PlayerSummary | null>(() => {
+    if (!state || !player || myColor == null || !friendships) return null;
+    const oppName = myColor === "white" ? state.blackUsername : state.whiteUsername;
+    for (const f of friendships) {
+      const other = f.requester.id === player.id ? f.addressee : f.requester;
+      if (other.username === oppName) return other;
+    }
+    return null;
+  }, [state, player, myColor, friendships]);
+
   // Clear any local selection whenever the position changes (either side moved).
   useEffect(() => {
     setSelected(null);
     setPendingPromotion(null);
   }, [state?.placement]);
+
+  // Fires the win confetti once, set only on the live active→over transition
+  // below (so opening an already-won game from history doesn't re-celebrate).
+  const [celebrate, setCelebrate] = useState(false);
+
+  // Play a subtle sound when the game advances — for either side's move (so an
+  // opponent's move doubles as a "your turn" cue) and once when the game ends.
+  // Baselined on the first state we see, so loading into a game is silent.
+  const soundBaseline = useRef<{ moves: number; captured: number; over: boolean } | null>(null);
+  useEffect(() => {
+    if (!state) return;
+    const capturedTotal = state.capturedByWhite.length + state.capturedByBlack.length;
+    const over = state.status !== "ACTIVE";
+    const prev = soundBaseline.current;
+    soundBaseline.current = { moves: state.moves.length, captured: capturedTotal, over };
+    if (!prev) return; // first state — establish baseline without playing
+
+    if (!prev.over && over) {
+      // Any ending (checkmate, resignation, timeout, draw, stalemate).
+      play("gameEnd");
+      // Celebrate a win from the viewer's perspective (not loss/draw/spectator).
+      const iWon =
+        !!state.winnerUsername &&
+        myColor != null &&
+        state.winnerUsername === (myColor === "white" ? state.whiteUsername : state.blackUsername);
+      if (iWon) setCelebrate(true);
+    } else if (state.moves.length > prev.moves) {
+      if (state.outcome === "CHECK") play("check");
+      else if (capturedTotal > prev.captured) play("capture");
+      else if (isCastle(state, state.moves[state.moves.length - 1])) play("castle");
+      else play("move");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state?.moves.length, state?.status, state?.capturedByWhite.length, state?.capturedByBlack.length]);
 
   // No selecting while reviewing an earlier position.
   useEffect(() => {
@@ -143,6 +258,48 @@ export default function GamePage() {
     const king = board.find((p) => p.type === "king" && p.color === state.sideToMove);
     return king ? { file: king.file, rank: king.rank } : null;
   }, [state, board]);
+
+  // Piece movement definitions for this game's variant (from the catalog), used
+  // to work out which piece(s) are giving check. Null until the catalog loads.
+  const pieceDefs = useMemo(() => {
+    const def = definitions.find((d) => d.id === state?.gameDefinitionId);
+    if (!def) return null;
+    const map = new Map<PieceType, PieceDefinition>();
+    for (const d of def.pieces) map.set(d.name.toLowerCase() as PieceType, d);
+    return map;
+  }, [definitions, state?.gameDefinitionId]);
+
+  // A red beam from each checking piece to the king in check. attackersOf finds
+  // the real attacker(s), so discovered checks point from the right piece and
+  // double checks draw both beams.
+  const checkBeams = useMemo(() => {
+    if (!state || !checkSquare || !pieceDefs) return [];
+    const by: PieceColor = state.sideToMove === "white" ? "black" : "white";
+    return attackersOf(board, checkSquare, by, pieceDefs).map((a) => ({
+      from: { file: a.file, rank: a.rank },
+      to: checkSquare,
+    }));
+  }, [state, checkSquare, board, pieceDefs]);
+
+  // Highlight the from/to of the move that produced the shown position — the
+  // latest move when live, or the reviewed move when stepping through history.
+  const lastMove = useMemo(() => {
+    const m = state && viewedPly >= 0 ? state.moves[viewedPly] : undefined;
+    return m ? { from: { file: m.fromFile, rank: m.fromRank }, to: { file: m.toFile, rank: m.toRank } } : null;
+  }, [state, viewedPly]);
+
+  // Once the game is over, tint the board frame from the viewer's perspective:
+  // green win, red loss, purple draw (matching the game-history accents). Active
+  // games (and spectators, who have no win/loss perspective) keep the gray frame.
+  const boardAccent = useMemo(() => {
+    if (!state || state.status === "ACTIVE") return null;
+    if (state.result === "1/2-1/2") return RESULT_ACCENT.draw;
+    if (state.winnerUsername && myColor) {
+      const myName = myColor === "white" ? state.whiteUsername : state.blackUsername;
+      return state.winnerUsername === myName ? RESULT_ACCENT.win : RESULT_ACCENT.loss;
+    }
+    return null;
+  }, [state, myColor]);
 
   const handleSquareClick = (file: number, rank: number) => {
     if (!state || !isMyTurn || !atLive) return;
@@ -223,6 +380,8 @@ export default function GamePage() {
   const usernameFor = (c: PieceColor) => (c === "white" ? state.whiteUsername : state.blackUsername);
   const avatarKeyFor = (c: PieceColor) => (c === "white" ? state.whiteAvatarKey : state.blackAvatarKey);
   const ratingFor = (c: PieceColor) => (c === "white" ? state.whiteRating : state.blackRating);
+  // Signed rating delta from this game; null while active / casual (shown once settled).
+  const ratingChangeFor = (c: PieceColor) => (c === "white" ? state.whiteRatingChange : state.blackRatingChange);
   const clockMsFor = (c: PieceColor) => (c === "white" ? state.whiteMs : state.blackMs);
   // Pieces a player has captured (their opponent's, so rendered in the opposite color).
   const capturedFor = (c: PieceColor) => (c === "white" ? state.capturedByWhite : state.capturedByBlack);
@@ -255,6 +414,7 @@ export default function GamePage() {
             username={usernameFor(topColor)}
             avatarKey={avatarKeyFor(topColor)}
             rating={ratingFor(topColor)}
+            ratingChange={ratingChangeFor(topColor)}
             captured={capturedFor(topColor)}
             advantage={advantageFor(topColor)}
             clockMs={clockMsFor(topColor)}
@@ -272,6 +432,9 @@ export default function GamePage() {
               selectedSquare={selected}
               moveTargets={moveTargets}
               checkSquare={checkSquare}
+              lastMove={lastMove}
+              outcomeAccent={boardAccent}
+              checkBeams={checkBeams}
               onSquareClick={handleSquareClick}
             />
             {pendingPromotion && (
@@ -282,12 +445,14 @@ export default function GamePage() {
                 onCancel={() => setPendingPromotion(null)}
               />
             )}
+            <WinConfetti celebrate={celebrate} />
           </Box>
 
           <PlayerRow
             username={usernameFor(bottomColor)}
             avatarKey={avatarKeyFor(bottomColor)}
             rating={ratingFor(bottomColor)}
+            ratingChange={ratingChangeFor(bottomColor)}
             captured={capturedFor(bottomColor)}
             advantage={advantageFor(bottomColor)}
             clockMs={clockMsFor(bottomColor)}
@@ -330,6 +495,126 @@ export default function GamePage() {
               onResign={() => setResignOpen(true)}
             />
           )}
+          {over && (
+            <Box sx={{ position: "relative", width: "300px", mx: "auto" }}>
+              <Box
+                component="img"
+                src={ScrollImage}
+                alt=""
+                sx={{
+                  width: "300px",
+                  height: "auto",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+              {/* Proclamation over the parchment: below the emblem, above the
+                  bottom roller. Inked brown with a faint emboss for legibility. */}
+              {(() => {
+                const { headline, sub } = scrollResult(state);
+                return (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      top: "30%",
+                      bottom: "14%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 0.75,
+                      px: 3,
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontWeight: 800,
+                        letterSpacing: "0.04em",
+                        lineHeight: 1.05,
+                        color: "#4a3113",
+                        fontSize: "1.5rem",
+                        textShadow: "0 1px 0 rgba(255,255,255,0.35)",
+                      }}
+                    >
+                      {headline}
+                    </Typography>
+                    {sub && (
+                      <Typography
+                        sx={{
+                          fontWeight: 700,
+                          letterSpacing: "0.1em",
+                          lineHeight: 1.15,
+                          color: "#6b4a1e",
+                          fontSize: "0.85rem",
+                          textShadow: "0 1px 0 rgba(255,255,255,0.3)",
+                        }}
+                      >
+                        {sub}
+                      </Typography>
+                    )}
+                    {/* Crest: the winner (or both players on a draw), with the
+                        settled rating + delta for rated games. */}
+                    {(() => {
+                      const winnerColor: PieceColor | null =
+                        state.winnerUsername === state.whiteUsername
+                          ? "white"
+                          : state.winnerUsername === state.blackUsername
+                            ? "black"
+                            : null;
+                      const crest = (c: PieceColor, size: number) => {
+                        const change = ratingChangeFor(c);
+                        return (
+                          <Stack sx={{ alignItems: "center", gap: 0.25 }}>
+                            <PlayerAvatar username={usernameFor(c)} avatarKey={avatarKeyFor(c)} size={size} />
+                            <Typography
+                              sx={{ fontWeight: 700, color: "#4a3113", fontSize: "0.82rem", lineHeight: 1.2 }}
+                            >
+                              {usernameFor(c)}
+                            </Typography>
+                            {change != null && (
+                              <Typography
+                                sx={{ fontSize: "0.72rem", color: "#6b4a1e", fontVariantNumeric: "tabular-nums" }}
+                              >
+                                {ratingFor(c)}{" "}
+                                <Box
+                                  component="span"
+                                  sx={{ fontWeight: 700, color: change >= 0 ? "#2e7d32" : "#a12a2a" }}
+                                >
+                                  {change >= 0 ? `+${change}` : change}
+                                </Box>
+                              </Typography>
+                            )}
+                          </Stack>
+                        );
+                      };
+                      return winnerColor ? (
+                        <Box sx={{ mt: 0.5 }}>{crest(winnerColor, 56)}</Box>
+                      ) : (
+                        <Stack direction="row" sx={{ gap: 2, mt: 0.5 }}>
+                          {crest("white", 38)}
+                          {crest("black", 38)}
+                        </Stack>
+                      );
+                    })()}
+                  </Box>
+                );
+              })()}
+            </Box>
+          )}
+          {over && opponent && (
+            <Box sx={{ textAlign: "center", width: "100%" }}>
+              <Button
+                id="rematch"
+                type="primary"
+                label="Rematch"
+                onClick={() => setRematchOpen(true)}
+                style={{ backgroundColor: MAIN_PURPLE, width: "150px" }}
+              />
+            </Box>
+          )}
         </Stack>
       </Stack>
 
@@ -346,6 +631,15 @@ export default function GamePage() {
         }}
         onCancel={() => setResignOpen(false)}
       />
+
+      {/* Rematch: re-challenge the opponent, reusing the start-game flow (timer /
+          rated / color), pre-targeted to them. */}
+      <StartGameDialog
+        open={rematchOpen}
+        onClose={() => setRematchOpen(false)}
+        opponentType={OpponentType.HUMAN}
+        presetFriend={opponent}
+      />
     </section>
   );
 }
@@ -354,6 +648,7 @@ function PlayerRow({
   username,
   avatarKey,
   rating,
+  ratingChange,
   captured,
   advantage,
   clockMs,
@@ -364,6 +659,8 @@ function PlayerRow({
   username: string;
   avatarKey: string | null;
   rating: number;
+  /** Signed rating delta from this game; null while active / casual. */
+  ratingChange: number | null;
   /** Codes of the opponent's pieces this player has captured. */
   captured: string[];
   /** Net material for this side; a positive value shows as a "+N" badge. */
@@ -388,8 +685,24 @@ function PlayerRow({
         border: `1px solid ${toMove ? MAIN_BLUE_LIGHT : SURFACE_BORDER}`,
       }}
     >
-      {/* Left: avatar + name + rating (same badge used across the app). */}
-      <PlayerBadge username={username} avatarKey={avatarKey} rating={rating} size={40} sx={{ minWidth: 0 }} />
+      {/* Left: avatar + name + rating (same badge used across the app), with the
+          settled rating delta beside it once the game is rated and over. */}
+      <Stack direction="row" sx={{ alignItems: "center", gap: 1, minWidth: 0 }}>
+        <PlayerBadge username={username} avatarKey={avatarKey} rating={rating} size={40} sx={{ minWidth: 0 }} />
+        {ratingChange != null && (
+          <Typography
+            sx={{
+              flexShrink: 0,
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              fontVariantNumeric: "tabular-nums",
+              color: ratingChange >= 0 ? COLOR_SUCCESS : COLOR_ERROR,
+            }}
+          >
+            {ratingChange >= 0 ? `+${ratingChange}` : ratingChange}
+          </Typography>
+        )}
+      </Stack>
 
       {/* Right: captured pieces pinned next to the mock timer. */}
       <Stack direction="row" sx={{ alignItems: "center", gap: 2, flexShrink: 0 }}>
@@ -438,7 +751,13 @@ function CapturedStrip({ codes, advantage, color }: { codes: string[]; advantage
       ))}
       {advantage > 0 && (
         <Typography
-          sx={{ ml: 0.5, color: TEXT_SECONDARY, fontSize: "0.8rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
+          sx={{
+            ml: 0.5,
+            color: TEXT_SECONDARY,
+            fontSize: "0.8rem",
+            fontWeight: 600,
+            fontVariantNumeric: "tabular-nums",
+          }}
         >
           +{advantage}
         </Typography>
@@ -610,20 +929,24 @@ function StatusLine({
   if (state.status !== "ACTIVE") {
     const isDraw = state.result === "1/2-1/2";
     let text: string;
+    // Color the result from the viewer's perspective, matching the board frame /
+    // history accents: green win, red loss, purple draw. Spectator / unresolved
+    // lines stay neutral.
+    let color: string = TEXT_PRIMARY;
     if (isDraw) {
       text = "Draw";
+      color = ACCENT_PURPLE;
     } else if (state.winnerUsername && myColor) {
-      text =
-        state.winnerUsername === (myColor === "white" ? state.whiteUsername : state.blackUsername)
-          ? "You won"
-          : "You lost";
+      const iWon = state.winnerUsername === (myColor === "white" ? state.whiteUsername : state.blackUsername);
+      text = iWon ? "You won" : "You lost";
+      color = iWon ? COLOR_SUCCESS : COLOR_ERROR;
     } else {
       text = state.winnerUsername ? `${state.winnerUsername} won` : "Game over";
     }
     const detail = endReasonDetail(state.endReason, isDraw, state.outcome);
     return (
       <Stack sx={{ gap: 0.5 }}>
-        <Typography variant="h6" sx={{ color: TEXT_PRIMARY, fontWeight: 700 }}>
+        <Typography variant="h6" sx={{ color, fontWeight: 700 }}>
           {text}
         </Typography>
         {detail && (

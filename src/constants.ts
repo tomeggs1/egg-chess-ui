@@ -50,5 +50,14 @@ export const TEXT_PRIMARY = "#f5f5f7"; // headings / high-emphasis
 export const TEXT_SECONDARY = "#b5b5bd"; // body / medium-emphasis
 export const TEXT_MUTED = "#7c7c85"; // captions / disabled
 
+// --- Result accents (top→bottom gradients) ----------------------------------
+// Win / loss / draw gradients, shared by the game-history rows and the
+// finished-game board frame so both read the same colors.
+export const RESULT_ACCENT = {
+  win: "linear-gradient(to bottom, #77df65, #277035)",
+  loss: "linear-gradient(to bottom, #ef5d56, #821b1d)",
+  draw: "linear-gradient(to bottom, #c18ff3, #6a46d4)",
+} as const;
+
 // --- Palette groupings (handy for iteration) --------------------------------
 export const ACCENTS = [ACCENT_BLUE, ACCENT_CYAN, ACCENT_TEAL, ACCENT_GREEN, ACCENT_PINK, ACCENT_PURPLE] as const;

@@ -11,7 +11,7 @@ import { BoardSeams } from "./BoardSeams";
 import { boardTileSrc, boardVariantCount, boardDecals } from "../data/boardAssets";
 import { tileVariant, tileRotation } from "../data/boardThemes";
 import type { MoveTarget } from "./moves";
-import { ACCENT_PURPLE, COLOR_ERROR_TRANSPARENT, MAIN_BLUE } from "../constants";
+import { ACCENT_PURPLE, COLOR_ERROR, COLOR_ERROR_TRANSPARENT, MAIN_BLUE } from "../constants";
 
 /** An arrow drawn from one square to another (e.g. a suggested move). */
 export interface BoardArrow {
@@ -38,8 +38,15 @@ interface BoardProps {
   checkSquare?: { file: number; rank: number } | null;
   /** A move to preview (from/to squares outlined), or null. Used for suggestions. */
   hintMove?: { from: { file: number; rank: number }; to: { file: number; rank: number } } | null;
+  /** The most recent move's from/to squares, tinted so the last move is visible. */
+  lastMove?: { from: { file: number; rank: number }; to: { file: number; rank: number } } | null;
+  /** When set (a finished game), the frame fades from gray to this gradient —
+   *  a win/loss/draw accent. Left unset for active games (the gray stone frame). */
+  outcomeAccent?: string | null;
   /** Suggestion arrows to draw over the board (top explorer moves). */
   arrows?: BoardArrow[];
+  /** Red "beam" arrows from each checking piece to the king in check. */
+  checkBeams?: Array<{ from: { file: number; rank: number }; to: { file: number; rank: number } }>;
   /** Squares to mark as available moves/captures for the selection. */
   moveTargets?: MoveTarget[];
   /** Called with the clicked square. Presence makes squares interactive. */
@@ -55,6 +62,13 @@ const checkPulse = keyframes`
   50% { opacity: 0.9; transform: translateX(-50%) scale(1.1); }
 `;
 
+// Draw-in for the check beam: with each line's stroke-dashoffset seeded to its
+// full length (hidden), animating it to 0 grows the beam from the attacker to
+// the king. `from` is implicit (the seeded attribute), so no per-line CSS var.
+const beamGrow = keyframes`
+  to { stroke-dashoffset: 0; }
+`;
+
 const LIGHT_SQUARE = "#ebecd0";
 const DARK_SQUARE = "#779556";
 // Soft diagonal sheen per square: a hair lighter at the top-left, darker at the
@@ -67,6 +81,9 @@ const NOISE =
 const FILE_LETTERS = "abcdefgh";
 // King fills this share of a square's height; other pieces scale down from it.
 const KING_HEIGHT_PCT = 94;
+// Square-canvas sprite sets (theme.squareCanvas) fill this share of the cell,
+// centered. Near-full since their art already includes internal padding.
+const SQUARE_CANVAS_FILL_PCT = 96;
 // Neutral carved-stone frame: a raised gray surround that reads as a physical
 // board edge without a color that fights any theme (grass/sand, slate, green).
 const FRAME_PAD = 16; // px of stone border around the playfield
@@ -98,7 +115,10 @@ export function Board({
   selectedSquare = null,
   checkSquare = null,
   hintMove = null,
+  lastMove = null,
+  outcomeAccent = null,
   arrows = [],
+  checkBeams = [],
   moveTargets,
   onSquareClick,
   pieces,
@@ -154,9 +174,26 @@ export function Board({
         },
       }}
     >
+      {/* Finished-game frame tint: fades a win/loss/draw gradient over the gray
+          stone frame, visible in the border around the board. Absent (fully
+          transparent → gray) for active games; the opacity transition makes the
+          color sweep in when a live game ends. */}
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "16px",
+          background: outcomeAccent ?? "transparent",
+          opacity: outcomeAccent ? 1 : 0,
+          transition: "opacity 0.8s ease",
+          pointerEvents: "none",
+        }}
+      />
       <Box
         sx={{
           position: "relative",
+          zIndex: 1,
           width: "100%",
           aspectRatio: "1 / 1",
           borderRadius: "4px",
@@ -190,6 +227,9 @@ export function Board({
               const isHint =
                 (hintMove?.from.file === file && hintMove?.from.rank === rank) ||
                 (hintMove?.to.file === file && hintMove?.to.rank === rank);
+              const isLastMove =
+                (lastMove?.from.file === file && lastMove?.from.rank === rank) ||
+                (lastMove?.to.file === file && lastMove?.to.rank === rank);
               const kind = targetKind.get(`${file},${rank}`);
               return (
                 <Box
@@ -278,6 +318,28 @@ export function Board({
                     >
                       {FILE_LETTERS[file]}
                     </Box>
+                  )}
+                  {isLastMove && (
+                    <Box
+                      aria-hidden
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        // Flat squares take a bright amber wash. On textured image
+                        // tiles amber blends into the sand, so instead darken the
+                        // square with a warm radial glow centered under the piece —
+                        // darkest at the center, fading to clear at the edges — so
+                        // it reads via brightness (independent of hue).
+                        ...(tile
+                          ? {
+                              backgroundImage:
+                                "radial-gradient(circle closest-side, rgba(30,18,0,0.56) 0%, rgba(30,18,0,0) 92%)",
+                            }
+                          : { backgroundColor: "rgba(255,199,64,0.40)" }),
+                        pointerEvents: "none",
+                        zIndex: 1,
+                      }}
+                    />
                   )}
                   {isCheck && (
                     <Box
@@ -440,11 +502,26 @@ export function Board({
                   draggable={false}
                   sx={{
                     position: "absolute",
-                    bottom: "10%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    height: `${(pieceHeightRatio(theme, piece.type) * KING_HEIGHT_PCT).toFixed(1)}%`,
-                    width: "auto",
+                    ...(theme.squareCanvas
+                      ? {
+                          // Pre-proportioned square sprites: fill the cell,
+                          // centered. Relative piece sizes are baked into the
+                          // art, so the per-type ratios don't apply.
+                          inset: 0,
+                          margin: "auto",
+                          width: `${SQUARE_CANVAS_FILL_PCT}%`,
+                          height: `${SQUARE_CANVAS_FILL_PCT}%`,
+                          objectFit: "contain",
+                        }
+                      : {
+                          // Tall art bled to the canvas edges: size by the
+                          // king-relative ratios and stand it on the square.
+                          bottom: "10%",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          height: `${(pieceHeightRatio(theme, piece.type) * KING_HEIGHT_PCT).toFixed(1)}%`,
+                          width: "auto",
+                        }),
                     filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.55))",
                   }}
                 />
@@ -529,6 +606,85 @@ export function Board({
                 );
               });
             })()}
+          </Box>
+        )}
+
+        {/* Check beams — a translucent red arrow from each checking piece to the
+            king. Behind the pieces (zIndex 2, like the suggestion arrows) so the
+            pieces sit on top of the beam. */}
+        {checkBeams.length > 0 && (
+          <Box
+            component="svg"
+            viewBox="0 0 8 8"
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden
+            sx={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 2,
+              width: "100%",
+              height: "100%",
+              pointerEvents: "none",
+              // Each beam line draws in from the attacker toward the king.
+              "& line": { animation: `${beamGrow} 0.45s ease-out forwards` },
+            }}
+          >
+            {checkBeams.map((b) => {
+              const fCol = orientation === "white" ? b.from.file : 7 - b.from.file;
+              const fRow = orientation === "white" ? 7 - b.from.rank : b.from.rank;
+              const tCol = orientation === "white" ? b.to.file : 7 - b.to.file;
+              const tRow = orientation === "white" ? 7 - b.to.rank : b.to.rank;
+              const x1 = fCol + 0.5;
+              const y1 = fRow + 0.5;
+              const x2 = tCol + 0.5;
+              const y2 = tRow + 0.5;
+              const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+              const ux = (x2 - x1) / len;
+              const uy = (y2 - y1) / len;
+              const nx = -uy;
+              const ny = ux;
+              const headLen = 0.4;
+              const headHalf = 0.2;
+              const baseX = x2 - ux * headLen;
+              const baseY = y2 - uy * headLen;
+              // Dash length = the drawn segment; seeding dashoffset to it hides
+              // the line until the grow animation reels it in to 0.
+              const lineLen = Math.hypot(baseX - x1, baseY - y1) || 1;
+              return (
+                <g key={`${b.from.file},${b.from.rank}-${b.to.file},${b.to.rank}`}>
+                  {/* Soft glow underlay, then the core line, then the head. */}
+                  <line
+                    x1={x1}
+                    y1={y1}
+                    x2={baseX}
+                    y2={baseY}
+                    stroke={COLOR_ERROR}
+                    strokeOpacity={0.25}
+                    strokeWidth={0.22}
+                    strokeLinecap="round"
+                    strokeDasharray={lineLen}
+                    strokeDashoffset={lineLen}
+                  />
+                  <line
+                    x1={x1}
+                    y1={y1}
+                    x2={baseX}
+                    y2={baseY}
+                    stroke={COLOR_ERROR}
+                    strokeOpacity={0.55}
+                    strokeWidth={0.15}
+                    strokeLinecap="round"
+                    strokeDasharray={lineLen}
+                    strokeDashoffset={lineLen}
+                  />
+                  <polygon
+                    points={`${x2},${y2} ${baseX + nx * headHalf},${baseY + ny * headHalf} ${baseX - nx * headHalf},${baseY - ny * headHalf}`}
+                    fill={COLOR_ERROR}
+                    fillOpacity={0.55}
+                  />
+                </g>
+              );
+            })}
           </Box>
         )}
       </Box>
