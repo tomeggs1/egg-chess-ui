@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { Box, Dialog, IconButton, Stack, Typography } from "@mui/material";
 import type { DialogProps, SxProps, Theme } from "@mui/material";
-import { Icon } from "../icons";
-import { ACCENT_BRIGHT, ACCENT_DECOR, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import { ACCENT_BRIGHT, ACCENT_DECOR, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import { DIALOG_CLOSE, DIALOG_FRAME, DIALOG_GLOW } from "../theme/tokens";
 import { DIALOG_CHECKER_SX, DIALOG_GLOW_SX } from "../theme/surfaces";
+import { FrameLayer, frameInset } from "./GamePanel";
 
 /**
  * The single dialog shell for the whole app.
@@ -19,10 +20,9 @@ import { DIALOG_CHECKER_SX, DIALOG_GLOW_SX } from "../theme/surfaces";
  * mostly deletion. The three plainer modals opt out via `glow={false}` and
  * `hairline`.
  *
- * The header is deliberately not the only way in. A dialog with a bespoke
- * header — GameOverDialog builds its emblem from the game result — simply
- * passes no header props and renders its own inside `children`, still getting
- * the paper, hairline and close button.
+ * The header is deliberately not the only way in. A dialog that needs a bespoke
+ * one passes no header props and renders its own inside `children`, still
+ * getting the paper, hairline and close button.
  *
  * This is the seam to style for the medieval pass: change the hairline, the
  * paper, the header wash or the emblem frame here and every modal follows.
@@ -55,12 +55,22 @@ export interface GameDialogProps extends Omit<DialogProps, "title" | "onClose"> 
   closeDisabled?: boolean;
   /** The corner-wash paper treatment. */
   glow?: boolean;
+  /**
+   * The carved stone border. On by default.
+   *
+   * When it is on the accent hairline is suppressed — the frame's top band
+   * covers exactly where the hairline sits, so drawing both just hides one
+   * under the other. Pass a `hairline` explicitly to override.
+   */
+  frame?: boolean;
   hairline?: DialogHairline;
   /** Padding is applied to `children` unless this is false. */
   bodyPadding?: boolean;
   bodySx?: SxProps<Theme>;
   children?: ReactNode;
 }
+
+const FRAME_INSET = frameInset(DIALOG_FRAME);
 
 export function GameDialog({
   open,
@@ -71,7 +81,8 @@ export function GameDialog({
   showClose,
   closeDisabled,
   glow = true,
-  hairline = "gradient",
+  frame = true,
+  hairline = frame ? "none" : "gradient",
   bodyPadding = true,
   bodySx,
   children,
@@ -96,11 +107,51 @@ export function GameDialog({
         // clip — otherwise the border radius leaves it with square corners.
         { "& .MuiDialog-paper": { overflow: "hidden" } },
         ...(glow ? [DIALOG_GLOW_SX] : []),
+        // AFTER the glow: DIALOG_GLOW_SX also sets `overflow: hidden`, and the
+        // later entry in an sx array wins. Put the frame first and the glow
+        // silently re-clips the paper, hiding the whole frame.
+        ...(frame
+          ? [{
+              "& .MuiDialog-paper": {
+                // Must NOT clip: `overflow: hidden` clips children to the
+                // PADDING box, and the frame layer sits at negative offsets
+                // outside it to reach the border box. The clip only existed to
+                // keep the hairline inside the radius, and the frame replaces
+                // the hairline, so nothing needs it here.
+                overflow: "visible",
+                border: "none",
+                // The frame's outline is the stone's silhouette, not a rounded
+                // rectangle, so nothing may paint one at the paper's edge:
+                //  - no radius, or its corner arc shows past the chamfer;
+                //  - background clipped to the content box, so the surface
+                //    stops exactly where the stone begins and the chamfered
+                //    corners read as transparent;
+                //  - the glow's 1px gilt ring dropped for the same reason.
+                borderRadius: 0,
+                backgroundClip: "content-box",
+                ...(glow ? { boxShadow: DIALOG_GLOW.boxShadowFramed } : {}),
+                paddingTop: `${FRAME_INSET.top}px`,
+                paddingRight: `${FRAME_INSET.right}px`,
+                paddingBottom: `${FRAME_INSET.bottom}px`,
+                paddingLeft: `${FRAME_INSET.left}px`,
+              },
+            }]
+          : []),
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
       ]}
       {...rest}
     >
-      {rule && <Box aria-hidden sx={{ height: "3px", background: rule }} />}
+      {/*
+        `flexShrink: 0` on the chrome, and a scrolling body below.
+
+        MUI's dialog paper is a flex column capped at `calc(100% - 64px)`. Left
+        to itself, a dialog taller than the viewport shrinks its children rather
+        than scrolling — SignUp's header collapsed from 220px to 44px at a 700px
+        window, and since the header clips (it has to, for the checker mask) the
+        title and subtitle were cut off rather than pushed out of view.
+      */}
+      {frame && <FrameLayer art={DIALOG_FRAME} />}
+      {rule && <Box aria-hidden sx={{ height: "3px", flexShrink: 0, background: rule }} />}
 
       {closeVisible && onClose && (
         <IconButton
@@ -112,11 +163,19 @@ export function GameDialog({
             top: 10,
             right: 10,
             zIndex: 1,
-            color: TEXT_MUTED,
-            "&:hover": { color: TEXT_PRIMARY },
+            padding: 0.5,
+            opacity: 0.85,
+            transition: "opacity 0.15s ease, transform 0.15s ease",
+            "&:hover": { opacity: 1, transform: "scale(1.08)" },
+            "&.Mui-disabled": { opacity: 0.35 },
           }}
         >
-          <Icon name="close" fontSize="small" />
+          <Box
+            component="img"
+            src={DIALOG_CLOSE.art}
+            alt=""
+            sx={{ height: DIALOG_CLOSE.size, width: "auto", display: "block" }}
+          />
         </IconButton>
       )}
 
@@ -124,7 +183,31 @@ export function GameDialog({
         // The checker is absolutely positioned, so it needs its own element to
         // fill — keeping it out of the body also stops the wash running behind
         // buttons and form fields.
-        <Box sx={{ position: "relative", overflow: "hidden", px: 3, pt: 3.5, pb: 2 }}>
+        //
+        // When framed, the header bleeds out through the paper's padding so the
+        // checker meets the stone instead of stopping short of it. Negative
+        // margins take the box out to the frame; the same amount goes back on as
+        // padding, so the emblem and title do not move.
+        <Box
+          sx={{
+            position: "relative",
+            overflow: "hidden",
+            flexShrink: 0,
+            px: 3,
+            pt: 3.5,
+            pb: 2,
+            ...(frame
+              ? {
+                  marginTop: `-${FRAME_INSET.top}px`,
+                  marginLeft: `-${FRAME_INSET.left}px`,
+                  marginRight: `-${FRAME_INSET.right}px`,
+                  paddingTop: `calc(28px + ${FRAME_INSET.top}px)`,
+                  paddingLeft: `calc(24px + ${FRAME_INSET.left}px)`,
+                  paddingRight: `calc(24px + ${FRAME_INSET.right}px)`,
+                }
+              : {}),
+          }}
+        >
           <Box aria-hidden sx={DIALOG_CHECKER_SX} />
           <Stack direction="column" sx={{ position: "relative", alignItems: "center", gap: 1.25 }}>
             {emblem && (
@@ -144,7 +227,11 @@ export function GameDialog({
               </Typography>
             )}
             {subtitle != null && (
-              <Typography variant="body2" sx={{ color: TEXT_SECONDARY, textAlign: "center" }}>
+              // `component="div"`, not the default <p>: subtitle takes a
+              // ReactNode, and ChallengeManager puts a spinner beside its text.
+              // Block elements inside a <p> are invalid and get reparented by
+              // the browser, which breaks the centring.
+              <Typography component="div" variant="body2" sx={{ color: TEXT_SECONDARY, textAlign: "center" }}>
                 {subtitle}
               </Typography>
             )}
@@ -161,6 +248,11 @@ export function GameDialog({
       {bodyPadding || bodySx ? (
         <Box
           sx={[
+            // Take the remaining height and scroll, rather than letting the
+            // paper's flex layout squeeze the header. min-height:0 is required:
+            // without it a flex item will not shrink below its content size and
+            // the overflow never engages.
+            { flex: "1 1 auto", minHeight: 0, overflowY: "auto" },
             bodyPadding ? { px: 3, pb: 3, pt: hasHeader ? 0 : 3 } : {},
             ...(Array.isArray(bodySx) ? bodySx : bodySx ? [bodySx] : []),
           ]}

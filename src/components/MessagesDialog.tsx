@@ -11,6 +11,8 @@ import {
 } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { GameDialog } from "./GameDialog";
+import { DIALOG_CLOSE } from "../theme/tokens";
+import { SmallIcon } from "./SmallIcon";
 import { useAuth } from "../auth/AuthContext";
 import { useFriends } from "../hooks/useFriends";
 import {
@@ -300,19 +302,53 @@ export default function MessagesDialog({ open, onClose }: MessagesDialogProps) {
         direction="row"
         sx={{ alignItems: "center", gap: 1, px: 2, py: 1.5, borderBottom: `1px solid ${SURFACE_BORDER}` }}
       >
-        {view.name !== "list" && (
-          <IconButton size="small" aria-label="Back" onClick={() => setView({ name: "list" })} sx={{ color: TEXT_SECONDARY }}>
-            <ArrowBackRoundedIcon fontSize="small" />
-          </IconButton>
-        )}
+        {/*
+          The leading slot: the dialog's crest at the top level, a back button
+          once you are inside a thread. Either/or rather than both, because the
+          back button already says where you are and two glyphs before a title
+          reads as clutter.
+
+          Both are boxed to the same 30px as a small IconButton so the title
+          does not shift sideways when you navigate between the two views.
+
+          This is the consistency pass the crested dialogs get from GameDialog's
+          header — done inline here because a 100px emblem would cost 220px of a
+          540px paper whose whole job is a scrolling list.
+        */}
+        <Stack sx={{ width: 30, alignItems: "center", flexShrink: 0 }}>
+          {view.name === "list" ? (
+            <SmallIcon name="messages" size={22} />
+          ) : (
+            <IconButton size="small" aria-label="Back" onClick={() => setView({ name: "list" })} sx={{ color: TEXT_SECONDARY }}>
+              <ArrowBackRoundedIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Stack>
         <Typography sx={{ flex: 1, fontWeight: 700, color: TEXT_PRIMARY }}>{title}</Typography>
         {view.name === "list" && (
           <IconButton size="small" aria-label="New message" onClick={() => setView({ name: "new" })} sx={{ color: ACCENT_PRIMARY }}>
             <Icon name="compose" fontSize="small" />
           </IconButton>
         )}
-        <IconButton size="small" aria-label="Close" onClick={onClose} sx={{ color: TEXT_MUTED }}>
-          <Icon name="close" fontSize="small" />
+        {/* Same shield as GameDialog's corner button — this dialog carries its
+            own close in the header row rather than the corner. */}
+        <IconButton
+          size="small"
+          aria-label="Close"
+          onClick={onClose}
+          sx={{
+            padding: 0.5,
+            opacity: 0.85,
+            transition: "opacity 0.15s ease, transform 0.15s ease",
+            "&:hover": { opacity: 1, transform: "scale(1.08)" },
+          }}
+        >
+          <Box
+            component="img"
+            src={DIALOG_CLOSE.art}
+            alt=""
+            sx={{ height: DIALOG_CLOSE.size - 4, width: "auto", display: "block" }}
+          />
         </IconButton>
       </Stack>
 

@@ -19,7 +19,6 @@ import { fetchExplorer, type ExplorerDb, type ExplorerResult } from "../data/exp
 import { BoardControls } from "../components/BoardControls";
 import { CapturedTray } from "../components/CapturedTray";
 import { GameStatus } from "../components/GameStatus";
-import { GameOverDialog } from "../components/GameOverDialog";
 import { MoveHistory, type Notation } from "../components/MoveHistory";
 import { MoveSuggestions } from "../components/MoveSuggestions";
 import { PromotionPicker } from "../components/PromotionPicker";
@@ -56,8 +55,6 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
     color: PieceColor;
     captured?: PlacedPiece;
   } | null>(null);
-  // Suppresses the game-over modal after "Review" (until the next move / reset).
-  const [gameOverDismissed, setGameOverDismissed] = useState(false);
   // Opening-explorer move suggestions.
   const [explorerDb, setExplorerDb] = useState<ExplorerDb>("masters");
   const [explorer, setExplorer] = useState<{ data: ExplorerResult | null; loading: boolean; error: boolean }>({
@@ -236,7 +233,6 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
     setCurrentPly(currentPly + 1);
     setSelected(null);
     setHintMove(null);
-    setGameOverDismissed(false);
     justMoved.current = true; // let the effect below play the move sound
   };
 
@@ -277,7 +273,6 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
     setCurrentPly(-1);
     setSelected(null);
     setPendingPromotion(null);
-    setGameOverDismissed(false);
     setHintMove(null);
   };
 
@@ -442,14 +437,6 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
           />
         </Stack>
       </Stack>
-
-      <GameOverDialog
-        open={(outcome === "checkmate" || outcome === "stalemate") && !gameOverDismissed}
-        outcome={outcome}
-        winner={outcome === "checkmate" ? (turn === "white" ? "black" : "white") : undefined}
-        onNewGame={() => resetTo(game)}
-        onReview={() => setGameOverDismissed(true)}
-      />
     </section>
   );
 }

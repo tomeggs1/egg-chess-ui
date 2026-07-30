@@ -1,0 +1,239 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Dialog stone frame</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#f2e9d8;--ink2:#c3b39a;--ink3:#9a8b74;--gold:#c9a227;--brass:#e0bf6a;
+  --paper:#211c17;--edge:#4e4133;--nav:#2c251e;
+  --w:420px;      /* dialog width  */
+  --h:340px;      /* dialog height */
+  --s:1;          /* border scale — the "border width" knob */
+  /* Natural slice sizes, from the trimmed art. */
+  --tl-w:53px; --tl-h:63px;
+  --tr-w:49px; --tr-h:68px;
+  --bl-w:52px; --bl-h:56px;
+  --br-w:50px; --br-h:53px;
+  --edge-t:29px;   /* top/bottom band thickness */
+  --edge-s:28px;   /* left/right band thickness */
+  /* Per-side nudges, in SOURCE-ART pixels, so they scale with --s.
+     The cutter trims each slice to its own opaque bbox, and the left and right
+     edges each lost 1px off their outer column (29 -> 28). That shifts them
+     inboard by a pixel once they are pinned to the frame edge. Positive values
+     push the piece outward. */
+  --nudge-l:0; --nudge-r:1;
+  --joint-w:2px;  --joint-a:.55;        /* A: mortar line at each junction */
+  --lap:14px;                           /* B: px of edge drawn over the corner */
+  --fade-x:linear-gradient(90deg,transparent 0,#000 calc(var(--lap)*var(--s)),#000 calc(100% - var(--lap)*var(--s)),transparent 100%);
+  --fade-y:linear-gradient(180deg,transparent 0,#000 calc(var(--lap)*var(--s)),#000 calc(100% - var(--lap)*var(--s)),transparent 100%);
+  --top-len:297px; --bot-len:149px;
+  --left-len:348px; --right-len:313px;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:22px;background:#151210;font:15px 'EB Garamond',Georgia,serif;color:var(--ink)}
+h1{font:700 20px Cinzel,serif;letter-spacing:.06em;color:var(--brass);margin:0 0 4px}
+.sub{color:var(--ink2);margin:0 0 16px;max-width:96ch}
+
+.bar{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin:0 0 22px;
+  padding:12px 16px;background:#231e19;border:1px solid #383026;border-radius:5px}
+.bar label{font-size:13px;color:var(--ink2);display:flex;gap:8px;align-items:center}
+.bar input[type=range]{width:150px;accent-color:var(--gold)}
+.bar input[type=checkbox]{accent-color:var(--gold);width:15px;height:15px}
+.val{font:600 13px 'Roboto Mono',monospace;color:var(--brass);min-width:52px}
+
+.stage{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start}
+
+/* ---------------------------------------------------------------------------
+   The frame. Eight positioned pieces, not border-image: the corners are four
+   different sizes and none of them shares the edges' 29px thickness, so there
+   is no single set of slice insets that describes this art.
+
+   Every piece is pinned to the OUTER edge it belongs to, so the bands line up
+   even though the corner elbows are different heights. Edges run between the
+   corners and tile (they were measured as tileable: 5-8/255 at the seam).
+--------------------------------------------------------------------------- */
+.dialog{position:relative;width:var(--w);height:var(--h)}
+.paper{position:absolute;inset:calc(var(--edge-t) * var(--s) * .5);
+  background:var(--paper);border-radius:4px;
+  box-shadow:inset 0 1px 0 rgba(255,235,190,.07), inset 0 -2px 4px rgba(0,0,0,.55);
+  overflow:hidden;display:flex;flex-direction:column}
+.frame > i{position:absolute;display:block;background-repeat:no-repeat;
+  background-size:100% 100%;pointer-events:none}
+
+.c-tl{left:0;top:0;width:calc(var(--tl-w)*var(--s));height:calc(var(--tl-h)*var(--s));
+  background-image:url("../src/assets/images/dialog-top-left.webp")}
+.c-tr{right:0;top:0;width:calc(var(--tr-w)*var(--s));height:calc(var(--tr-h)*var(--s));
+  background-image:url("../src/assets/images/dialog-top-right.webp")}
+.c-bl{left:0;bottom:0;width:calc(var(--bl-w)*var(--s));height:calc(var(--bl-h)*var(--s));
+  background-image:url("../src/assets/images/dialog-bottom-left.webp")}
+.c-br{right:0;bottom:0;width:calc(var(--br-w)*var(--s));height:calc(var(--br-h)*var(--s));
+  background-image:url("../src/assets/images/dialog-bottom-right.webp")}
+
+.e-top{top:0;left:calc(var(--tl-w)*var(--s));right:calc(var(--tr-w)*var(--s));
+  height:calc(var(--edge-t)*var(--s));
+  background-image:url("../src/assets/images/dialog-top.webp")}
+.e-bot{bottom:0;left:calc(var(--bl-w)*var(--s));right:calc(var(--br-w)*var(--s));
+  height:calc(var(--edge-t)*var(--s));
+  background-image:url("../src/assets/images/dialog-bottom.webp")}
+.e-left{left:calc(var(--nudge-l) * var(--s) * -1px);top:calc(var(--tl-h)*var(--s));bottom:calc(var(--bl-h)*var(--s));
+  width:calc(var(--edge-s)*var(--s));
+  background-image:url("../src/assets/images/dialog-left.webp")}
+.e-right{right:calc(var(--nudge-r) * var(--s) * -1px);top:calc(var(--tr-h)*var(--s));bottom:calc(var(--br-h)*var(--s));
+  width:calc(var(--edge-s)*var(--s));
+  background-image:url("../src/assets/images/dialog-right.webp")}
+
+/* Tiling keeps the masonry at a constant scale; stretching keeps the block
+   count fixed and distorts instead. */
+body.tile .e-top,body.tile .e-bot{background-size:calc(var(--top-len)*var(--s)) 100%;
+  background-repeat:repeat-x}
+body.tile .e-left,body.tile .e-right{background-size:100% calc(var(--left-len)*var(--s));
+  background-repeat:repeat-y}
+
+/* ---------------------------------------------------------------------------
+   Three ways to treat the corner/edge junction. They combine.
+
+   A · JOINT — stop hiding the seam and declare it. A dark line at each end of
+   every edge reads as mortar, which is what real masonry has at exactly this
+   point. Cheapest, scale-independent, and it suits the material.
+
+   B · CROSSFADE — overlap the edges onto the corners and mask their ends to
+   transparent, so the corner art dissolves into the edge instead of butting.
+   Removes the step outright, at the cost of a slightly softer joint.
+
+   C · ROUND — `background-repeat: round` scales the tile so a whole number
+   fits, which lands a real block boundary at the corner rather than an
+   arbitrary slice through a block.
+--------------------------------------------------------------------------- */
+body.joint .e-top::after,body.joint .e-bot::after,
+body.joint .e-left::after,body.joint .e-right::after{
+  content:"";position:absolute;inset:0;pointer-events:none}
+body.joint .e-top::after,body.joint .e-bot::after{
+  background:linear-gradient(90deg,
+    rgba(0,0,0,var(--joint-a)) 0 calc(var(--joint-w)*var(--s)), transparent calc(var(--joint-w)*var(--s)),
+    transparent calc(100% - var(--joint-w)*var(--s)), rgba(0,0,0,var(--joint-a)) calc(100% - var(--joint-w)*var(--s)))}
+body.joint .e-left::after,body.joint .e-right::after{
+  background:linear-gradient(180deg,
+    rgba(0,0,0,var(--joint-a)) 0 calc(var(--joint-w)*var(--s)), transparent calc(var(--joint-w)*var(--s)),
+    transparent calc(100% - var(--joint-w)*var(--s)), rgba(0,0,0,var(--joint-a)) calc(100% - var(--joint-w)*var(--s)))}
+
+body.fade .e-top,body.fade .e-bot,body.fade .e-left,body.fade .e-right{z-index:1}
+body.fade .c-tl,body.fade .c-tr,body.fade .c-bl,body.fade .c-br{z-index:0}
+body.fade .e-top{left:calc((var(--tl-w) - var(--lap))*var(--s));right:calc((var(--tr-w) - var(--lap))*var(--s));
+  -webkit-mask-image:var(--fade-x);mask-image:var(--fade-x)}
+body.fade .e-bot{left:calc((var(--bl-w) - var(--lap))*var(--s));right:calc((var(--br-w) - var(--lap))*var(--s));
+  -webkit-mask-image:var(--fade-x);mask-image:var(--fade-x)}
+body.fade .e-left{top:calc((var(--tl-h) - var(--lap))*var(--s));bottom:calc((var(--bl-h) - var(--lap))*var(--s));
+  -webkit-mask-image:var(--fade-y);mask-image:var(--fade-y)}
+body.fade .e-right{top:calc((var(--tr-h) - var(--lap))*var(--s));bottom:calc((var(--br-h) - var(--lap))*var(--s));
+  -webkit-mask-image:var(--fade-y);mask-image:var(--fade-y)}
+
+body.round .e-top,body.round .e-bot{background-repeat:round}
+body.round .e-left,body.round .e-right{background-repeat:round}
+
+.hdr{padding:18px 22px 10px;text-align:center}
+.hdr h2{font:700 19px Cinzel,serif;color:var(--ink);margin:0 0 4px;letter-spacing:.04em}
+.hdr p{margin:0;font-size:13px;color:var(--ink2)}
+.body{padding:6px 22px 18px;overflow:auto}
+.field{height:38px;border:1px solid var(--edge);border-radius:3px;margin-bottom:10px;
+  background:rgba(0,0,0,.22)}
+.btns{display:flex;gap:10px;margin-top:6px}
+.btn{flex:1;height:34px;border-radius:3px;display:flex;align-items:center;justify-content:center;
+  font:600 12px Cinzel,serif;letter-spacing:.07em;text-transform:uppercase;color:var(--ink)}
+.btn.p{background:#8c6f18}.btn.s{background:#3a3128}
+
+.caption{font:600 10px Cinzel,serif;letter-spacing:.12em;text-transform:uppercase;
+  color:#6d6252;margin-bottom:8px}
+.note{margin-top:26px;padding:12px 16px;border-left:3px solid var(--gold);
+  background:rgba(201,162,39,.07);color:var(--ink2);font-size:13.5px;line-height:1.6;max-width:104ch}
+.note b{color:var(--ink)} .note code{color:var(--brass);font-size:12.5px}
+</style>
+
+<h1>Dialog stone frame</h1>
+<p class="sub">Your eight slices composed around a dialog. Not <code>border-image</code> — the four
+corners are four different sizes and none matches the 29px edge thickness, so there is no single
+set of slice insets that describes this art. Instead each piece is pinned to the outer edge it
+belongs to and the edges run between the corners.</p>
+
+<div class="bar">
+  <label>Width <input type="range" min="280" max="760" value="420"
+    oninput="R.setProperty('--w',this.value+'px');wv.textContent=this.value+'px'">
+    <span class="val" id="wv">420px</span></label>
+  <label>Height <input type="range" min="180" max="680" value="340"
+    oninput="R.setProperty('--h',this.value+'px');hv.textContent=this.value+'px'">
+    <span class="val" id="hv">340px</span></label>
+  <label>Border scale <input type="range" min="35" max="150" value="100"
+    oninput="R.setProperty('--s',this.value/100);sv.textContent=(this.value/100).toFixed(2)+'×'">
+    <span class="val" id="sv">1.00×</span></label>
+  <label>Nudge L <input type="range" min="-3" max="3" step="1" value="0"
+    oninput="R.setProperty('--nudge-l',this.value);nl.textContent=this.value+'px'">
+    <span class="val" id="nl">0px</span></label>
+  <label>Nudge R <input type="range" min="-3" max="3" step="1" value="1"
+    oninput="R.setProperty('--nudge-r',this.value);nr.textContent=this.value+'px'">
+    <span class="val" id="nr">1px</span></label>
+  <label><input type="checkbox" checked
+    onchange="document.body.classList.toggle('tile',this.checked)"> Tile edges</label>
+  <label><input type="checkbox"
+    onchange="document.body.classList.toggle('joint',this.checked)"> A · mortar joint</label>
+  <label><input type="checkbox"
+    onchange="document.body.classList.toggle('fade',this.checked)"> B · crossfade</label>
+  <label><input type="checkbox"
+    onchange="document.body.classList.toggle('round',this.checked)"> C · round tiling</label>
+  <label>Overlap <input type="range" min="4" max="26" value="14"
+    oninput="R.setProperty('--lap',this.value+'px');lp.textContent=this.value+'px'">
+    <span class="val" id="lp">14px</span></label>
+</div>
+
+<div class="stage">
+  <div>
+    <div class="caption">live</div>
+    <div class="dialog">
+      <div class="paper">
+        <div class="hdr"><h2>Board Settings</h2><p>Customize how the board and pieces look</p></div>
+        <div class="body">
+          <div class="field"></div><div class="field"></div><div class="field"></div>
+          <div class="btns"><div class="btn s">Cancel</div><div class="btn p">Save</div></div>
+        </div>
+      </div>
+      <div class="frame">
+        <i class="e-top"></i><i class="e-bot"></i><i class="e-left"></i><i class="e-right"></i>
+        <i class="c-tl"></i><i class="c-tr"></i><i class="c-bl"></i><i class="c-br"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <b>Border scale is the knob to judge first.</b> At 1.00&times; the band is 29px, which against a
+  420px dialog is 7% of the width per side. Below about 0.6&times; the masonry stops reading as
+  blocks; above 1.2&times; the corners start to crowd a small dialog.
+  <br><br>
+  <b>Tile vs stretch.</b> Tiling holds the block size constant and lets the count change with the
+  dialog — the seams measured 5&ndash;8/255, so they do not show. Stretching keeps a fixed number of
+  blocks and distorts them; drag the width with tiling off to see how quickly that reads as wrong.
+  <br><br>
+  <b>Watch the corners as the dialog shrinks.</b> The corner elbows are 49&ndash;53px wide and
+  53&ndash;68px tall at 1&times;. Two of them plus a little edge is already ~110px, so a narrow
+  dialog becomes almost entirely corner. That is the constraint that decides the minimum usable
+  dialog size, not the band thickness.
+</div>
+<script>
+const R = document.documentElement.style;
+document.body.classList.add('tile');
+// ?w=&h=&s= so a given size/scale can be linked to or screenshotted directly.
+const q = new URLSearchParams(location.search);
+for (const [k, v, unit] of [['w','--w','px'], ['h','--h','px'], ['s','--s',''],
+                            ['nl','--nudge-l',''], ['nr','--nudge-r','']]) {
+  if (q.has(k)) {
+    R.setProperty(v, q.get(k) + unit);
+    const inp = document.querySelector(`input[oninput*="${v}"]`);
+    if (inp) { inp.value = k === 's' ? q.get(k) * 100 : q.get(k); inp.dispatchEvent(new Event('input')); }
+  }
+}
+if (q.get('tile') === '0') document.body.classList.remove('tile');
+for (const c of ['joint','fade','round']) {
+  if (q.get(c) === '1') {
+    document.body.classList.add(c);
+    const b = document.querySelector(`input[onchange*="'${c}'"]`); if (b) b.checked = true;
+  }
+}
+</script>

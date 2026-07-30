@@ -4,7 +4,6 @@ import { Box, CircularProgress, Stack, Typography } from "@mui/material";
 import { Board } from "../board/Board";
 import { parsePlacement, reconcilePieceIds, type PlacedPiece } from "../board/fen";
 import { attackersOf, type MoveTarget } from "../board/moves";
-import OutlinedFlagRoundedIcon from "@mui/icons-material/OutlinedFlagRounded";
 import { PromotionPicker } from "../components/PromotionPicker";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { PlayerBadge } from "../components/PlayerBadge";
@@ -32,6 +31,7 @@ import type { PieceColor, PieceType } from "../data/pieceThemes";
 import { OpponentType, type PieceDefinition } from "../data/types";
 import { useGameCatalog } from "../data/GameCatalogContext";
 import type { PlayerSummary } from "../api/friends";
+import ResignEmblem from "../assets/images/resign-large.webp";
 import {
   COLOR_DRAW,
   COLOR_ERROR,
@@ -632,7 +632,7 @@ export default function GamePage() {
         message="Your opponent will be awarded the win."
         confirmLabel="Resign"
         confirmColor={COLOR_ERROR}
-        icon={<OutlinedFlagRoundedIcon sx={{ fontSize: 44, color: COLOR_ERROR }} />}
+        emblem={ResignEmblem}
         onConfirm={() => {
           resign.mutate();
           setResignOpen(false);

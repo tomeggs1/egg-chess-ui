@@ -27,6 +27,7 @@ import { Icons, type IconComponent } from "../icons";
 import { OpponentType } from "../data/types";
 import { useState } from "react";
 import StartGameDialog from "../components/StartGameDialog";
+import { GamePanel } from "../components/GamePanel";
 import { useAuth } from "../auth/AuthContext";
 
 type Feature = {
@@ -242,16 +243,27 @@ export default function HomePage() {
           {features.map((feature) => {
             const Icon = feature.icon;
             return (
-              <Box
+              <GamePanel
                 key={feature.title}
+                // The frame's clearance already holds content ~17-19px off the
+                // edge; this is the extra breathing room, matching the p:3 the
+                // bordered card used.
+                inset={6}
                 sx={{
-                  p: 3,
-                  borderRadius: `${RADIUS.lg}px`,
                   backgroundColor: SURFACE_800,
-                  border: `${BORDER_WIDTH}px solid ${SURFACE_BORDER}`,
+                  // Square: the gilt corner scrolls are square, so a radius
+                  // would pull the surface away from them and show the page
+                  // through the gap.
+                  borderRadius: 0,
                   boxShadow: CARVED,
-                  transition: "border-color 0.15s ease, transform 0.15s ease",
-                  "&:hover": { borderColor: feature.color, transform: "translateY(-2px)" },
+                  transition: "box-shadow 0.15s ease, transform 0.15s ease",
+                  // The frame is raster gilt and cannot be tinted, so hover
+                  // warms the card with the feature's accent instead of
+                  // recolouring an edge.
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: `${CARVED}, 0 0 22px ${feature.color}38`,
+                  },
                 }}
               >
                 {/* Icon niche — square-cut and recessed, not a rounded chip. */}
@@ -277,7 +289,7 @@ export default function HomePage() {
                 <Typography variant="body2" sx={{ color: TEXT_MUTED, lineHeight: 1.65 }}>
                   {feature.description}
                 </Typography>
-              </Box>
+              </GamePanel>
             );
           })}
         </Box>

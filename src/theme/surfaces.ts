@@ -24,8 +24,7 @@ const CHECKER_FADE_START = "58%";
  * The faint chessboard wash behind dialog headers, fading out toward the
  * bottom. Two offset 45° gradients — the standard CSS checkerboard.
  *
- * Shared by the four dialogs that carry a header emblem (Login, SignUp,
- * Friends, StartGame), which each had an identical copy inline.
+ * Applied by GameDialog behind any dialog that supplies header props.
  */
 const CHECKER_MASK = `linear-gradient(to bottom, black 0%, black ${CHECKER_FADE_START}, transparent 100%)`;
 
@@ -46,12 +45,9 @@ export const DIALOG_CHECKER_SX: SxProps<Theme> = {
  * The "glow" dialog treatment: a blue→cyan corner wash plus a colored halo,
  * layered on top of the base dialog paper defined in muiTheme.ts.
  *
- * Used by the account and settings dialogs (LoginDialog, SignUpDialog,
- * FriendsDialog, BoardSettingsDialog, GameOverDialog), which had all been
- * carrying an identical copy of this block inline.
- *
- * Plainer dialogs — ConfirmDialog, MessagesDialog, ChallengeManager — omit it
- * and get the base paper only.
+ * Applied by GameDialog whenever `glow` is set, which is the default. The
+ * plainer modals — ConfirmDialog, MessagesDialog, ChallengeManager — pass
+ * `glow={false}` and get the base paper only.
  */
 export const DIALOG_GLOW_SX: SxProps<Theme> = {
   "& .MuiDialog-paper": {

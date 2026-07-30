@@ -13,7 +13,9 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
-import AppLogo from "../assets/images/HPChessLogo.png";
+// The nav crest, not the older HPChessLogo — so the sidebar and the sign-in
+// dialogs show the same mark. Trimmed WebP; see scripts/trim-image.py.
+import AppLogo from "../assets/images/hp-chess-nav-logo.webp";
 import { register } from "../api/auth";
 import { ApiError } from "../api/client";
 import { Button } from "./Button";

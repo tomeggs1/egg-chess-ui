@@ -257,6 +257,134 @@ export const CARVED = "inset 0 1px 0 rgba(255, 235, 190, 0.07), inset 0 -2px 4px
 export const STONE_TEXTURE = new URL("../assets/images/boards/pebblestone/white1.png", import.meta.url).href;
 
 // ============================================================================
+// Panel frame — the GamePanel border
+// ----------------------------------------------------------------------------
+// A dark navy band with a gilt rim and scrolled corners. Finer than the dialog's
+// stone frame and meant for content inside a page: feature cards first.
+//
+// Unlike the dialog slices these need NO cutting. They are a solid opaque band
+// — the dark is the frame's own fill, not a backing to remove — so they are a
+// straight PNG -> WebP conversion (254 KB -> 22 KB). Running them through
+// `cutout-emblem.py` would eat the fill and leave only the gold rim.
+//
+// This set is also far more regular than the dialog's: all four corners are
+// 17x19, matching the 17px side thickness and the 19px top/bottom thickness. It
+// could in principle be a `border-image`; it uses the same eight-piece path only
+// so GamePanel and GameDialog share one implementation.
+// ============================================================================
+const PANEL_ART = (n: string) =>
+  new URL(`../assets/images/panel-${n}.webp`, import.meta.url).href;
+
+export const PANEL_FRAME = {
+  scale: 1,
+  /**
+   * Small: the corners are exactly the band thickness, so there is no elbow for
+   * an edge to lap over — this only smooths a pixel of mismatch at the butt.
+   */
+  overlap: 2,
+  nudge: { top: 0, right: 0, bottom: 0, left: 0 },
+  /** Two corners sit a pixel shy of true; the other two are correct. */
+  cornerNudge: { tr: { x: 1 }, br: { y: 1 } },
+  corner: {
+    tl: { w: 17, h: 19 },
+    tr: { w: 17, h: 19 },
+    bl: { w: 17, h: 19 },
+    br: { w: 17, h: 19 },
+  },
+  edge: {
+    top: { thickness: 19, tile: 202 },
+    bottom: { thickness: 19, tile: 204 },
+    left: { thickness: 17, tile: 216 },
+    right: { thickness: 17, tile: 235 },
+  },
+  art: {
+    tl: PANEL_ART("top-left"),
+    tr: PANEL_ART("top-right"),
+    bl: PANEL_ART("bottom-left"),
+    br: PANEL_ART("bottom-right"),
+    top: PANEL_ART("top"),
+    bottom: PANEL_ART("bottom"),
+    left: PANEL_ART("left"),
+    right: PANEL_ART("right"),
+  },
+} as const;
+
+// ============================================================================
+// Dialog close button
+// ----------------------------------------------------------------------------
+// A red shield with a gold cross, replacing the Material glyph so every dialog
+// dismisses the same way. Raster art, so it takes no colour — hover is carried
+// by opacity and a slight lift instead of a tint.
+//
+// Sized by HEIGHT: the shield is portrait (69x89), so a square box would leave
+// it floating in dead space on either side.
+// ============================================================================
+export const DIALOG_CLOSE = {
+  art: new URL("../assets/images/close.webp", import.meta.url).href,
+  size: 36,
+} as const;
+
+// ============================================================================
+// Dialog stone frame
+// ----------------------------------------------------------------------------
+// A carved stone border around every dialog, composed from eight raster slices.
+//
+// NOT `border-image`. That needs one image with a consistent set of insets, and
+// this art has none: the four corners are four different sizes (53x63, 49x68,
+// 52x56, 50x53) and not one of them matches the ~28px edge thickness. So the
+// frame is eight absolutely-positioned pieces instead.
+//
+// The corner/edge junctions are crossfaded. Butted together they show a step
+// where a corner's bright capstone meets an edge's first block — the mismatch
+// is small on three corners (0.5-5.7 of 255 in mean luminance) but 17 on the
+// bottom-right. So the edges are drawn OVER the corners with `overlap` px of
+// lap and their ends masked to transparent, which dissolves one into the other.
+//
+// Regenerate the art with `scripts/cutout-dialog-frame.py`, never by hand.
+// ============================================================================
+const FRAME_ART = (n: string) => new URL(`../assets/images/dialog-${n}.webp`, import.meta.url).href;
+
+export const DIALOG_FRAME = {
+  /** Rendered size as a fraction of the source art. */
+  scale: 0.5,
+  /** Source px of edge lapped over each corner, and faded across. */
+  overlap: 14,
+  /**
+   * Final seating nudges, in RENDERED px — deliberately not scaled, because
+   * they correct the output pixel grid rather than the art.
+   *
+   * All zero now. The gaps that needed a nudge on the right and bottom were
+   * caused by the cutter trimming those slices across their band (29->28 and
+   * 29->27); it now leaves the edges whole, so there is nothing to compensate
+   * for. If a hairline gap reappears at some scale, this is the knob.
+   */
+  nudge: { top: 0, right: 0, bottom: 0, left: 0 },
+  /** Natural slice sizes, straight off the trimmed art. */
+  corner: {
+    tl: { w: 53, h: 63 },
+    tr: { w: 49, h: 68 },
+    bl: { w: 52, h: 56 },
+    br: { w: 50, h: 53 },
+  },
+  edge: {
+    top: { thickness: 29, tile: 297 },
+    bottom: { thickness: 29, tile: 149 },
+    left: { thickness: 29, tile: 348 },
+    right: { thickness: 29, tile: 313 },
+  },
+  art: {
+    tl: FRAME_ART("top-left"),
+    tr: FRAME_ART("top-right"),
+    bl: FRAME_ART("bottom-left"),
+    br: FRAME_ART("bottom-right"),
+    top: FRAME_ART("top"),
+    bottom: FRAME_ART("bottom"),
+    left: FRAME_ART("left"),
+    right: FRAME_ART("right"),
+  },
+} as const;
+
+// ============================================================================
 // Nav plaque — the "you are here" row in the sidebar
 // ----------------------------------------------------------------------------
 // A dark gem-blue plate with a gilt end cap. Hybrid by design: the plate is CSS
@@ -288,10 +416,10 @@ export const STONE_TEXTURE = new URL("../assets/images/boards/pebblestone/white1
 // that reason — 3° from the rail's own hue, it had neither axis and vanished on
 // the collapsed rail, where there is no cap and no label to carry it.
 // ============================================================================
-const PLAQUE_SRC_H = 62;      // the source artwork's height
-const PLAQUE_SRC_CAP_W = 27;  // ...and the width of its gold end cap
-const PLAQUE_SRC_RIM = 6;     // ...and its rim, top and bottom
-const PLAQUE_ROW_H = 44;      // the rendered nav row: 10px padding + 24px icon
+const PLAQUE_SRC_H = 62; // the source artwork's height
+const PLAQUE_SRC_CAP_W = 27; // ...and the width of its gold end cap
+const PLAQUE_SRC_RIM = 6; // ...and its rim, top and bottom
+const PLAQUE_ROW_H = 44; // the rendered nav row: 10px padding + 24px icon
 const PLAQUE_SCALE = PLAQUE_ROW_H / PLAQUE_SRC_H;
 
 export const PLAQUE = {
@@ -391,4 +519,13 @@ export const DIALOG_GLOW = {
     "radial-gradient(circle at 15% -10%, rgba(201, 162, 39, 0.20), transparent 45%), " +
     "radial-gradient(circle at 110% 0%, rgba(74, 151, 130, 0.18), transparent 42%)",
   boxShadow: `0 0 0 1px rgba(201, 162, 39, 0.28), 0 0 50px rgba(140, 111, 24, 0.30), ${SHADOW.lg}`,
+  /**
+   * The same glow WITHOUT the 1px gilt ring, for a framed dialog.
+   *
+   * That ring traces the paper's rounded rect. Behind a stone frame whose
+   * corners are chamfered, it shows as a pale rounded outline running outside
+   * the stone — the frame's silhouette is not a rounded rectangle, so nothing
+   * that assumes one can be drawn at the paper's edge.
+   */
+  boxShadowFramed: `0 0 50px rgba(140, 111, 24, 0.30), ${SHADOW.lg}`,
 } as const;

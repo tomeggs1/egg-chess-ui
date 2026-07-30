@@ -1,0 +1,63 @@
+<!doctype html>
+<meta charset="utf-8"><title>GamePanel frame</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#f2e9d8;--ink2:#c3b39a;--gold:#c9a227;--brass:#e0bf6a;--paper:#211c17;
+      --s:1;--lap:2px;
+      --c:17px;--ch:19px;--et:19px;--es:17px;
+      --top-tile:202px;--bot-tile:204px;--left-tile:216px;--right-tile:235px}
+*{box-sizing:border-box}
+body{margin:0;padding:24px;background:#151210;font:15px 'EB Garamond',Georgia,serif;color:var(--ink)}
+h1{font:700 19px Cinzel,serif;letter-spacing:.06em;color:var(--brass);margin:0 0 14px}
+.row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.cap{font:600 10px Cinzel,serif;letter-spacing:.12em;text-transform:uppercase;color:#6d6252;margin-bottom:7px}
+
+/* Mirrors GamePanel: padding = frame inset, layer at inset:0, edges над corners. */
+.panel{position:relative;overflow:visible;background:var(--paper);
+  padding:calc(var(--et)*var(--s) + 10px) calc(var(--es)*var(--s) + 10px)}
+.layer{position:absolute;inset:0;pointer-events:none;z-index:3}
+.layer i{position:absolute;display:block;background-repeat:no-repeat;background-size:100% 100%}
+.tl{left:0;top:0;width:calc(var(--c)*var(--s));height:calc(var(--ch)*var(--s));background-image:url("../src/assets/images/panel-top-left.webp")}
+.tr{right:-1px;top:0;width:calc(var(--c)*var(--s));height:calc(var(--ch)*var(--s));background-image:url("../src/assets/images/panel-top-right.webp")}
+.bl{left:0;bottom:0;width:calc(var(--c)*var(--s));height:calc(var(--ch)*var(--s));background-image:url("../src/assets/images/panel-bottom-left.webp")}
+.br{right:0;bottom:-1px;width:calc(var(--c)*var(--s));height:calc(var(--ch)*var(--s));background-image:url("../src/assets/images/panel-bottom-right.webp")}
+.et{top:0;left:calc(var(--c)*var(--s) - var(--lap));right:calc(var(--c)*var(--s) - var(--lap));height:calc(var(--et)*var(--s));
+  background-image:url("../src/assets/images/panel-top.webp");background-size:calc(var(--top-tile)*var(--s)) 100%;background-repeat:repeat-x;
+  -webkit-mask-image:var(--fx);mask-image:var(--fx)}
+.eb{bottom:0;left:calc(var(--c)*var(--s) - var(--lap));right:calc(var(--c)*var(--s) - var(--lap));height:calc(var(--et)*var(--s));
+  background-image:url("../src/assets/images/panel-bottom.webp");background-size:calc(var(--bot-tile)*var(--s)) 100%;background-repeat:repeat-x;
+  -webkit-mask-image:var(--fx);mask-image:var(--fx)}
+.el{left:0;top:calc(var(--ch)*var(--s) - var(--lap));bottom:calc(var(--ch)*var(--s) - var(--lap));width:calc(var(--es)*var(--s));
+  background-image:url("../src/assets/images/panel-left.webp");background-size:100% calc(var(--left-tile)*var(--s));background-repeat:repeat-y;
+  -webkit-mask-image:var(--fy);mask-image:var(--fy)}
+.er{right:0;top:calc(var(--ch)*var(--s) - var(--lap));bottom:calc(var(--ch)*var(--s) - var(--lap));width:calc(var(--es)*var(--s));
+  background-image:url("../src/assets/images/panel-right.webp");background-size:100% calc(var(--right-tile)*var(--s));background-repeat:repeat-y;
+  -webkit-mask-image:var(--fy);mask-image:var(--fy)}
+:root{--fx:linear-gradient(90deg,transparent 0,#000 var(--lap),#000 calc(100% - var(--lap)),transparent 100%);
+      --fy:linear-gradient(180deg,transparent 0,#000 var(--lap),#000 calc(100% - var(--lap)),transparent 100%)}
+.et,.eb,.el,.er{z-index:1}.tl,.tr,.bl,.br{z-index:0}
+
+h3{font:700 15px Cinzel,serif;color:var(--ink);margin:0 0 6px;letter-spacing:.04em}
+p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.5}
+</style>
+<h1>GamePanel frame</h1>
+<div class="row">
+  <div><div class="cap">feature card</div>
+    <div class="panel" style="width:270px">
+      <div class="layer"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i>
+        <i class="et"></i><i class="eb"></i><i class="el"></i><i class="er"></i></div>
+      <h3>Play anyone</h3><p>Challenge a friend, or get matched with someone at your rating.</p>
+    </div></div>
+  <div><div class="cap">tall</div>
+    <div class="panel" style="width:230px;min-height:280px">
+      <div class="layer"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i>
+        <i class="et"></i><i class="eb"></i><i class="el"></i><i class="er"></i></div>
+      <h3>Chess variants</h3><p>Go beyond the classics.</p>
+    </div></div>
+  <div><div class="cap">wide</div>
+    <div class="panel" style="width:520px">
+      <div class="layer"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i>
+        <i class="et"></i><i class="eb"></i><i class="el"></i><i class="er"></i></div>
+      <h3>Flexible time controls</h3><p>Lightning, quick or long — the tiling has to survive this width.</p>
+    </div></div>
+</div>
