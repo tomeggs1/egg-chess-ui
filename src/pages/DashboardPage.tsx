@@ -4,33 +4,37 @@ import { useAuth } from "../auth/AuthContext";
 import { useRecentGames } from "../hooks/useGameHistory";
 import { GameHistoryRow } from "../components/GameHistoryRow";
 import { PlayerAvatar } from "../components/PlayerAvatar";
+import { GamePanel } from "../components/GamePanel";
 import {
   ACCENT_PRIMARY,
   APP_NAME,
   SURFACE_800,
-  SURFACE_BORDER,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../constants";
 
-const cardSx = {
-  p: 2,
-  borderRadius: "14px",
-  backgroundColor: SURFACE_800,
-  border: `1px solid ${SURFACE_BORDER}`,
-};
-
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <Box sx={{ ...cardSx, minWidth: 150 }}>
+    <GamePanel
+      // The frame already clears ~17-19px; this is the extra room, standing in
+      // for the p:2 the bordered card used.
+      inset={2}
+      sx={{
+        minWidth: 150,
+        backgroundColor: SURFACE_800,
+        // Square, because the gilt corner scrolls are — a radius pulls the
+        // surface away from them and shows the page through the gap.
+        borderRadius: 0,
+      }}
+    >
       <Typography variant="body2" sx={{ color: TEXT_MUTED }}>
         {label}
       </Typography>
       <Typography variant="h5" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
         {value}
       </Typography>
-    </Box>
+    </GamePanel>
   );
 }
 
