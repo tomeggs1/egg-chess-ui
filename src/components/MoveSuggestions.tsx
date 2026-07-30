@@ -14,7 +14,7 @@ import type { PieceColor } from "../data/pieceThemes";
 import type { ExplorerDb, ExplorerResult } from "../data/explorer";
 import { edgeColor } from "../board/edgeColor";
 import {
-  ACCENT_BLUE,
+  ACCENT_PRIMARY,
   COLOR_ERROR,
   COLOR_SUCCESS,
   SURFACE_BLACK,
@@ -132,8 +132,8 @@ export function MoveSuggestions({
                   borderColor: SURFACE_BORDER,
                   "&.Mui-selected": {
                     color: TEXT_PRIMARY,
-                    backgroundColor: ACCENT_BLUE,
-                    "&:hover": { backgroundColor: ACCENT_BLUE },
+                    backgroundColor: ACCENT_PRIMARY,
+                    "&:hover": { backgroundColor: ACCENT_PRIMARY },
                   },
                 },
               }}
@@ -153,8 +153,8 @@ export function MoveSuggestions({
               checked={showArrows}
               onChange={(e) => onToggleArrows(e.target.checked)}
               sx={{
-                "& .MuiSwitch-switchBase.Mui-checked": { color: ACCENT_BLUE },
-                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: ACCENT_BLUE },
+                "& .MuiSwitch-switchBase.Mui-checked": { color: ACCENT_PRIMARY },
+                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: ACCENT_PRIMARY },
               }}
             />
           </Stack>
@@ -231,7 +231,7 @@ export function MoveSuggestions({
                     cursor: "pointer",
                     opacity: lowSample ? 0.5 : 1,
                     transition: "background-color 0.12s",
-                    "&:hover": { backgroundColor: "rgba(255,255,255,0.07)" },
+                    "&:hover": { backgroundColor: "rgba(255,235,190,0.07)" },
                   }}
                 >
                   <Typography
@@ -254,7 +254,7 @@ export function MoveSuggestions({
                         height: 8,
                         borderRadius: "4px",
                         overflow: "hidden",
-                        backgroundColor: "rgba(255,255,255,0.08)",
+                        backgroundColor: "rgba(255,235,190,0.08)",
                       }}
                     >
                       {/* Center (even) tick */}
@@ -265,7 +265,7 @@ export function MoveSuggestions({
                           top: 0,
                           bottom: 0,
                           width: "1px",
-                          backgroundColor: "rgba(255,255,255,0.28)",
+                          backgroundColor: "rgba(255,235,190,0.28)",
                           transform: "translateX(-0.5px)",
                         }}
                       />

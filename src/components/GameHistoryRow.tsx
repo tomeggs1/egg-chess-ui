@@ -1,23 +1,23 @@
 import { Link as RouterLink } from "react-router-dom";
 import { Box, Stack, Typography } from "@mui/material";
 import { keyframes } from "@emotion/react";
-import type { SvgIconComponent } from "@mui/icons-material";
-import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
-import SportsScoreRoundedIcon from "@mui/icons-material/SportsScoreRounded";
-import FlagRoundedIcon from "@mui/icons-material/FlagRounded";
-import TimerOffRoundedIcon from "@mui/icons-material/TimerOffRounded";
-import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
-import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
-import RemoveCircleOutlineRoundedIcon from "@mui/icons-material/RemoveCircleOutlineRounded";
-import RepeatRoundedIcon from "@mui/icons-material/RepeatRounded";
+import { Icons, type IconComponent } from "../icons";
 import { PlayerAvatar } from "./PlayerAvatar";
 import type { GameSummary } from "../api/games";
-import TrophyIcon from "../assets/images/blue-trophy.png";
 import {
-  ACCENT_BLUE,
+  ACCENT_BRIGHT,
+  ACCENT_PRIMARY,
+  BORDER_WIDTH,
+  COLOR_DRAW,
   COLOR_ERROR,
   COLOR_SUCCESS,
+  CTA_PRIMARY,
+  FONT,
+  RADIUS,
   RESULT_ACCENT,
+  SURFACE_900,
+  SURFACE_800,
+  SURFACE_BORDER,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
@@ -26,6 +26,7 @@ import { useGameCatalog } from "../data/GameCatalogContext";
 import { uiPieceSrc } from "../data/pieceAssets";
 import { TimerCategory } from "../data/types";
 import { TIMER_CATEGORY_ICON } from "./StartGameDialog";
+import GoldTrophyIcon from "../assets/images/gold-trophy.webp";
 
 const TIME_CATEGORY_LABEL: Record<GameSummary["timeCategory"], string> = {
   LIGHTNING: "Lightning",
@@ -49,8 +50,10 @@ function outcomeFor(game: GameSummary, me: string): Outcome {
 const OUTCOME_CHIP: Record<Outcome, { label: string; color: string }> = {
   win: { label: "Win", color: COLOR_SUCCESS },
   loss: { label: "Loss", color: COLOR_ERROR },
-  draw: { label: "Draw", color: TEXT_SECONDARY },
-  active: { label: "Active", color: ACCENT_BLUE },
+  // COLOR_DRAW, not TEXT_SECONDARY — GamePage colors the same concept with it,
+  // and the two were quietly disagreeing.
+  draw: { label: "Draw", color: COLOR_DRAW },
+  active: { label: "Active", color: ACCENT_PRIMARY },
   unknown: { label: "—", color: TEXT_MUTED },
 };
 
@@ -60,8 +63,11 @@ const OUTCOME_ACCENT: Record<Outcome, string> = {
   win: RESULT_ACCENT.win,
   loss: RESULT_ACCENT.loss,
   draw: RESULT_ACCENT.draw,
-  active: `linear-gradient(to bottom, ${ACCENT_BLUE}, #1c4a99)`,
-  unknown: "linear-gradient(to bottom, #6b7280, #374151)",
+  // Brass fading to deep gold. The bottom stop used to be a navy (#1c4a99) left
+  // over from the old palette, so after the rename this read gold-to-blue.
+  active: `linear-gradient(to bottom, ${ACCENT_BRIGHT}, ${CTA_PRIMARY})`,
+  // Weathered, not the cool slate greys this used to be.
+  unknown: `linear-gradient(to bottom, ${TEXT_MUTED}, ${SURFACE_BORDER})`,
 };
 
 // Gentle pulse on the "live" dot of an in-progress game.
@@ -73,14 +79,14 @@ const livePulse = keyframes`
 type EndReason = NonNullable<GameSummary["endReason"]>;
 
 // Human label + icon for each way a game can end.
-const END_REASON_META: Record<EndReason, { label: string; icon: SvgIconComponent }> = {
-  CHECKMATE: { label: "Checkmate", icon: SportsScoreRoundedIcon },
-  RESIGNATION: { label: "Resignation", icon: FlagRoundedIcon },
-  TIMEOUT: { label: "Timeout", icon: TimerOffRoundedIcon },
-  AGREEMENT: { label: "Agreement", icon: HandshakeRoundedIcon },
-  STALEMATE: { label: "Stalemate", icon: BlockRoundedIcon },
-  INSUFFICIENT_MATERIAL: { label: "Insufficient material", icon: RemoveCircleOutlineRoundedIcon },
-  THREEFOLD_REPETITION: { label: "Repetition", icon: RepeatRoundedIcon },
+const END_REASON_META: Record<EndReason, { label: string; icon: IconComponent }> = {
+  CHECKMATE: { label: "Checkmate", icon: Icons.checkmate },
+  RESIGNATION: { label: "Resignation", icon: Icons.resignation },
+  TIMEOUT: { label: "Timeout", icon: Icons.timeout },
+  AGREEMENT: { label: "Agreement", icon: Icons.agreement },
+  STALEMATE: { label: "Stalemate", icon: Icons.stalemate },
+  INSUFFICIENT_MATERIAL: { label: "Insufficient material", icon: Icons["insufficient-material"] },
+  THREEFOLD_REPETITION: { label: "Repetition", icon: Icons.repetition },
 };
 
 function formatVariant(id: string): string {
@@ -135,20 +141,36 @@ export function GameHistoryRow({ game, perspective }: GameHistoryRowProps) {
         display: "flex",
         alignItems: "center",
         gap: "15px",
-        p: 1.5,
-        borderRadius: "12px",
-        background: "linear-gradient(#07203b,#030f1c)",
-        border: `1px solid #123255`,
+        // 1.75 rather than 1.5 because the edge below is an inset ring painted
+        // over the padding, not a real border adding to the box.
+        p: 1.75,
+        borderRadius: `${RADIUS.lg}px`,
+        // Carved stone, matching the panel language. Was a navy gradient.
+        background: `linear-gradient(${SURFACE_800}, ${SURFACE_900})`,
+        // The stone edge is an INSET RING, not a `border`, and that is load-
+        // bearing. `::before` below is absolutely positioned with `inset: 0`,
+        // which resolves against the padding box — so a real border would push
+        // the outcome accent inward by its own width and the accent would sit
+        // *inside* the edge rather than on top of it. With no border, padding
+        // box == border box, both rings occupy the same band, and the
+        // pseudo-element paints above the parent's shadow.
+        boxShadow: `inset 0 0 0 ${BORDER_WIDTH}px ${SURFACE_BORDER}`,
         textDecoration: "none",
         maxWidth: "700px",
-        transition: "border-color 0.15s ease, background-color 0.15s ease",
-        "&:hover": { borderColor: ACCENT_BLUE, backgroundColor: "rgba(255,255,255,0.03)", textDecoration: "none" },
+        transition: "box-shadow 0.15s ease, background-color 0.15s ease",
+        "&:hover": {
+          boxShadow: `inset 0 0 0 ${BORDER_WIDTH}px ${ACCENT_PRIMARY}`,
+          backgroundColor: "rgba(255,235,190,0.03)",
+          textDecoration: "none",
+        },
         "&::before": {
           content: '""',
           position: "absolute",
           inset: 0,
-          borderRadius: "12px",
-          padding: "2px", // stroke thickness (the ring lives in the padding gap)
+          borderRadius: `${RADIUS.lg}px`,
+          // Stroke thickness. Matches the inset ring above exactly, so the
+          // accent replaces the stone edge on the left rather than nesting in it.
+          padding: `${BORDER_WIDTH}px`,
           background: OUTCOME_ACCENT[outcome],
           pointerEvents: "none",
           // Ring (border-box minus content-box) INTERSECTED with a left-only
@@ -178,7 +200,11 @@ export function GameHistoryRow({ game, perspective }: GameHistoryRowProps) {
       <Stack direction="column" sx={{ alignItems: "center", gap: 0.5, flexShrink: 0, width: "50px" }}>
         <Typography
           sx={{
-            fontWeight: 600,
+            // Engraved caps. It's a label rather than body copy, so it takes
+            // the display face even though the surrounding list stays in body.
+            fontFamily: FONT.display,
+            fontWeight: 700,
+            letterSpacing: "0.1em",
             backgroundImage: OUTCOME_ACCENT[outcome],
             fontSize: 14,
             WebkitBackgroundClip: "text",
@@ -194,8 +220,8 @@ export function GameHistoryRow({ game, perspective }: GameHistoryRowProps) {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              backgroundColor: ACCENT_BLUE,
-              boxShadow: `0 0 6px ${ACCENT_BLUE}`,
+              backgroundColor: ACCENT_PRIMARY,
+              boxShadow: `0 0 6px ${ACCENT_PRIMARY}`,
               animation: `${livePulse} 1.4s ease-in-out infinite`,
             }}
           />
@@ -212,9 +238,9 @@ export function GameHistoryRow({ game, perspective }: GameHistoryRowProps) {
           )}
           <Box
             component="img"
-            src={TrophyIcon}
-            alt={"Trophy"}
-            sx={{ width: 20, height: 20, flexShrink: 0, display: "block" }}
+            src={GoldTrophyIcon}
+            alt="Gold Trophy"
+            sx={{ width: 16, height: 16, flexShrink: 0, objectFit: "contain", display: "block" }}
           />
         </Stack>
       </Stack>
@@ -225,7 +251,7 @@ export function GameHistoryRow({ game, perspective }: GameHistoryRowProps) {
           <Typography sx={{ color: TEXT_PRIMARY, fontSize: "14px" }} noWrap>
             {opponentName}
           </Typography>
-          <Typography variant="body2" sx={{ color: ACCENT_BLUE }} noWrap>
+          <Typography variant="body2" sx={{ color: ACCENT_PRIMARY }} noWrap>
             {opponentRating != null ? `${opponentRating}` : ""}
           </Typography>
         </Stack>
@@ -237,7 +263,7 @@ export function GameHistoryRow({ game, perspective }: GameHistoryRowProps) {
             component="img"
             src={getGameDefinition(game.gameDefinitionId)?.icon}
             alt=""
-            sx={{ width: 20, height: 20, borderRadius: "4px" }}
+            sx={{ width: 20, height: 20, borderRadius: `${RADIUS.sm}px` }}
           />
           {formatVariant(game.gameDefinitionId)} ·
           <Box
@@ -255,8 +281,8 @@ export function GameHistoryRow({ game, perspective }: GameHistoryRowProps) {
 
       <Stack direction="column" sx={{ alignItems: "flex-end", gap: 0.5, flexShrink: 0, width: "100px" }}>
         {outcome === "active" && (
-          <Stack direction="row" sx={{ alignItems: "center", gap: 0.5, color: ACCENT_BLUE }}>
-            <PlayArrowRoundedIcon sx={{ fontSize: 16 }} />
+          <Stack direction="row" sx={{ alignItems: "center", gap: 0.5, color: ACCENT_PRIMARY }}>
+            <Icons.resume sx={{ fontSize: 16 }} />
             <Typography sx={{ fontSize: "13px", fontWeight: 600 }} noWrap>
               Resume
             </Typography>

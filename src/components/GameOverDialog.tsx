@@ -1,17 +1,12 @@
-import { Box, Dialog, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
+import { GameDialog } from "./GameDialog";
 import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
-import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
+import { Icon } from "../icons";
 import { Button } from "./Button";
 import { uiPieceSrc } from "../data/pieceAssets";
 import type { PieceColor } from "../data/pieceThemes";
-import {
-  ACCENT_PURPLE,
-  MAIN_BLUE_LIGHT,
-  MAIN_PURPLE,
-  SURFACE_800,
-  TEXT_PRIMARY,
-  TEXT_SECONDARY,
-} from "../constants";
+import { ACCENT_BRIGHT, CTA_SECONDARY, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import { DIALOG_CHECKER_SX } from "../theme/surfaces";
 
 interface GameOverDialogProps {
   open: boolean;
@@ -28,57 +23,55 @@ export function GameOverDialog({ open, outcome, winner, onNewGame, onReview }: G
   const subtitle = isMate ? `${winner === "white" ? "White" : "Black"} wins` : "Draw";
 
   return (
-    <Dialog
+    <GameDialog
       open={open}
       onClose={onReview}
-      fullWidth
-      maxWidth="xs"
-      sx={{
-        "& .MuiDialog-paper": {
-          position: "relative",
-          overflow: "hidden",
-          backgroundColor: SURFACE_800,
-          backgroundImage: `radial-gradient(circle at 15% -10%, rgba(77, 141, 255, 0.22), transparent 45%), radial-gradient(circle at 110% 0%, rgba(168, 85, 247, 0.22), transparent 42%)`,
-          border: `1px solid rgba(255, 255, 255, 0.12)`,
-          borderRadius: "18px",
-          color: TEXT_PRIMARY,
-          boxShadow: `0 0 0 1px rgba(77, 141, 255, 0.30), 0 0 50px rgba(96, 2, 197, 0.35), 0 40px 90px rgba(0, 0, 0, 0.80)`,
-        },
-      }}
+      // The result emblem is built from the outcome, so this one keeps its own
+      // header rather than using the shell's. No corner close button: the two
+      // buttons below are the intended way out.
+      showClose={false}
+      bodyPadding={false}
     >
-      <Box aria-hidden sx={{ height: "3px", background: `linear-gradient(90deg, ${MAIN_BLUE_LIGHT}, ${ACCENT_PURPLE})` }} />
+      {/*
+        Header with a faint chessboard pattern and the result emblem. Split out
+        of the body Stack so the checker has an element to fill — it is
+        absolutely positioned, and the buttons should sit below the wash rather
+        than on it.
+      */}
+      <Box sx={{ position: "relative", overflow: "hidden", px: 3, pt: 4, pb: 3 }}>
+        <Box aria-hidden sx={DIALOG_CHECKER_SX} />
+        <Stack direction="column" sx={{ position: "relative", alignItems: "center", gap: 1.5 }}>
+          {isMate && winner ? (
+            <Box
+              component="img"
+              src={uiPieceSrc(winner, "king")}
+              alt={`${winner} king`}
+              sx={{
+                height: 64,
+                width: "auto",
+                filter: winner === "black" ? "drop-shadow(0 0 3px rgba(255,255,255,0.5))" : "none",
+              }}
+            />
+          ) : (
+            <Icon name="agreement" sx={{ fontSize: 56, color: TEXT_SECONDARY }} />
+          )}
 
-      <Stack direction="column" sx={{ alignItems: "center", gap: 1.5, px: 3, pt: 4, pb: 3 }}>
-        {isMate && winner ? (
-          <Box
-            component="img"
-            src={uiPieceSrc(winner, "king")}
-            alt={`${winner} king`}
-            sx={{
-              height: 64,
-              width: "auto",
-              filter: winner === "black" ? "drop-shadow(0 0 3px rgba(255,255,255,0.5))" : "none",
-            }}
-          />
-        ) : (
-          <HandshakeRoundedIcon sx={{ fontSize: 56, color: TEXT_SECONDARY }} />
-        )}
-
-        <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
-          {isMate && <EmojiEventsRoundedIcon sx={{ color: "#f0c000" }} />}
-          <Typography variant="h5" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
-            {title}
+          <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+            {isMate && <EmojiEventsRoundedIcon sx={{ color: ACCENT_BRIGHT }} />}
+            <Typography variant="h5" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
+              {title}
+            </Typography>
+          </Stack>
+          <Typography variant="body1" sx={{ color: TEXT_SECONDARY }}>
+            {subtitle}
           </Typography>
         </Stack>
-        <Typography variant="body1" sx={{ color: TEXT_SECONDARY }}>
-          {subtitle}
-        </Typography>
+      </Box>
 
-        <Stack direction="row" sx={{ gap: 1.5, mt: 1.5 }}>
-          <Button id="game-over-review" type="secondary" label="Review" onClick={onReview} style={{ backgroundColor: "rgba(255,255,255,0.08)" }} />
-          <Button id="game-over-new" type="primary" label="New Game" onClick={onNewGame} style={{ backgroundColor: MAIN_PURPLE }} />
-        </Stack>
+      <Stack direction="row" sx={{ gap: 1.5, px: 3, pb: 3, justifyContent: "center" }}>
+        <Button id="game-over-review" type="secondary" label="Review" onClick={onReview} style={{ backgroundColor: "rgba(255,235,190,0.08)" }} />
+        <Button id="game-over-new" type="primary" label="New Game" onClick={onNewGame} style={{ backgroundColor: CTA_SECONDARY }} />
       </Stack>
-    </Dialog>
+    </GameDialog>
   );
 }

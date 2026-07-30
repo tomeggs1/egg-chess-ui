@@ -1,0 +1,17 @@
+<!--
+  add-friend — extracted from @mui/icons-material/AddRounded (MIT; the underlying
+  Material Design icon is Apache 2.0). Vendored as a file rather than left as
+  a fallback so it goes through GradientIcon like the rest of the set.
+
+  A bare plus, not PersonAddRounded which the app used before: it renders as a
+  button startIcon next to the word 'Add', so the label already supplies the
+  noun and the glyph only needs to supply the verb.
+
+  Interim choice — a game-icons glyph with an invitation cue would sit better
+  with the rest of the set if one turns up.
+
+  To refresh: read the `d` values out of node_modules/@mui/icons-material/AddRounded.js.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="currentColor" d="M18 13h-5v5c0 .55-.45 1-1 1s-1-.45-1-1v-5H6c-.55 0-1-.45-1-1s.45-1 1-1h5V6c0-.55.45-1 1-1s1 .45 1 1v5h5c.55 0 1 .45 1 1s-.45 1-1 1"/>
+</svg>

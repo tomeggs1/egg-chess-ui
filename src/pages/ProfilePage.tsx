@@ -6,9 +6,38 @@ import { ApiError } from "../api/client";
 import { Button } from "../components/Button";
 import { AvatarPicker } from "../components/AvatarPicker";
 import { COUNTRIES } from "../data/countries";
-import { ACCENT_BLUE, SURFACE_800, SURFACE_BORDER, TEXT_MUTED, TEXT_PRIMARY } from "../constants";
+import ProfileEmblem from "../assets/images/profile-large.webp";
+import { COLOR_ERROR, COLOR_SUCCESS, SURFACE_800, SURFACE_BORDER, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 
 const FORM_ID = "profile-form";
+
+/**
+ * Page header: emblem, title, subtitle.
+ *
+ * Shared by the loading, signed-out and loaded states so the page does not
+ * reflow as auth resolves — all three previously rendered their own raw <h1>.
+ */
+function PageHeader({ subtitle }: { subtitle: string }) {
+  return (
+    <Stack direction="row" sx={{ alignItems: "center", gap: 2, mb: 3 }}>
+      <Box
+        component="img"
+        src={ProfileEmblem}
+        alt=""
+        aria-hidden
+        sx={{ width: 72, height: 72, flexShrink: 0, objectFit: "contain", display: "block" }}
+      />
+      <Box>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
+          Profile
+        </Typography>
+        <Typography variant="body2" sx={{ color: TEXT_SECONDARY }}>
+          {subtitle}
+        </Typography>
+      </Box>
+    </Stack>
+  );
+}
 
 type Status = "idle" | "saving" | "success" | "error";
 
@@ -19,30 +48,6 @@ const emptyForm = {
   country: "",
   password: "",
   currentPassword: "",
-};
-
-// Dark, glassy field styling to match the login/sign-up dialogs.
-const fieldSx = {
-  "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: "10px",
-    "& fieldset": { borderColor: SURFACE_BORDER },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE, borderWidth: "1.5px" },
-  },
-  "& .MuiInputLabel-root": { color: TEXT_MUTED },
-  "& .MuiInputLabel-root.Mui-focused": { color: ACCENT_BLUE },
-  // Keep the floating label legible on the dark card when the field is disabled
-  // (MUI would otherwise use its near-black default disabled color).
-  "& .MuiInputLabel-root.Mui-disabled": { color: TEXT_MUTED },
-  "& .MuiFormHelperText-root": { color: TEXT_MUTED },
-  "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: TEXT_MUTED },
-  "& .MuiInputBase-input:-webkit-autofill": {
-    WebkitTextFillColor: TEXT_PRIMARY,
-    WebkitBoxShadow: `0 0 0 100px ${SURFACE_800} inset`,
-    caretColor: TEXT_PRIMARY,
-  },
 };
 
 export default function ProfilePage() {
@@ -106,8 +111,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <section>
-        <h1>Profile</h1>
-        <p>Loading…</p>
+        <PageHeader subtitle="Loading…" />
       </section>
     );
   }
@@ -115,8 +119,7 @@ export default function ProfilePage() {
   if (!isAuthenticated || !player) {
     return (
       <section>
-        <h1>Profile</h1>
-        <p>Please log in to view and edit your profile.</p>
+        <PageHeader subtitle="Please log in to view and edit your profile." />
       </section>
     );
   }
@@ -125,8 +128,7 @@ export default function ProfilePage() {
 
   return (
     <section>
-      <h1>Profile</h1>
-      <p>Update your account details.</p>
+      <PageHeader subtitle="Update your account details." />
 
       <Box
         sx={{
@@ -140,7 +142,7 @@ export default function ProfilePage() {
       >
         <form id={FORM_ID} onSubmit={handleSubmit}>
           <Stack direction="column" sx={{ gap: "16px" }}>
-            <TextField label="Username" value={player.username} disabled fullWidth sx={fieldSx} />
+            <TextField label="Username" value={player.username} disabled fullWidth />
             <AvatarPicker
               username={player.username}
               value={avatarKey}
@@ -156,7 +158,6 @@ export default function ProfilePage() {
               slotProps={{ htmlInput: { maxLength: 254 } }}
               disabled={saving}
               fullWidth
-              sx={fieldSx}
             />
             <Stack direction="row" sx={{ gap: "12px" }}>
               <TextField
@@ -167,7 +168,6 @@ export default function ProfilePage() {
                 slotProps={{ htmlInput: { maxLength: 100 } }}
                 disabled={saving}
                 fullWidth
-                sx={fieldSx}
               />
               <TextField
                 label="Last name"
@@ -177,7 +177,6 @@ export default function ProfilePage() {
                 slotProps={{ htmlInput: { maxLength: 100 } }}
                 disabled={saving}
                 fullWidth
-                sx={fieldSx}
               />
             </Stack>
             <Autocomplete
@@ -191,15 +190,14 @@ export default function ProfilePage() {
                 "& .MuiAutocomplete-popupIndicator": { color: TEXT_MUTED },
               }}
               slotProps={{
-                paper: { sx: { bgcolor: SURFACE_800, color: TEXT_PRIMARY, border: `1px solid ${SURFACE_BORDER}` } },
                 listbox: {
                   sx: {
-                    "& .MuiAutocomplete-option.Mui-focused": { backgroundColor: "rgba(77, 141, 255, 0.15)" },
-                    "& .MuiAutocomplete-option[aria-selected='true']": { backgroundColor: "rgba(77, 141, 255, 0.20)" },
+                    "& .MuiAutocomplete-option.Mui-focused": { backgroundColor: "rgba(201, 162, 39, 0.15)" },
+                    "& .MuiAutocomplete-option[aria-selected='true']": { backgroundColor: "rgba(201, 162, 39, 0.20)" },
                   },
                 },
               }}
-              renderInput={(params) => <TextField {...params} label="Country" sx={fieldSx} />}
+              renderInput={(params) => <TextField {...params} label="Country" />}
             />
 
             <Divider sx={{ borderColor: SURFACE_BORDER, mt: 1 }} />
@@ -216,7 +214,6 @@ export default function ProfilePage() {
               slotProps={{ htmlInput: { minLength: 8, maxLength: 100 } }}
               disabled={saving}
               fullWidth
-              sx={fieldSx}
             />
             <TextField
               label="Current password"
@@ -229,7 +226,6 @@ export default function ProfilePage() {
               required={form.password.length > 0}
               disabled={saving}
               fullWidth
-              sx={fieldSx}
             />
 
             {message && (
@@ -238,8 +234,10 @@ export default function ProfilePage() {
                 variant="outlined"
                 sx={{
                   color: TEXT_PRIMARY,
-                  borderColor: status === "success" ? "rgba(34, 197, 94, 0.5)" : "rgba(239, 68, 68, 0.5)",
-                  "& .MuiAlert-icon": { color: status === "success" ? "#22c55e" : "#ef4444" },
+                  // Was hardcoded #22c55e / #ef4444 — the latter is the
+                  // pre-medieval error red, which now sits on HP's hue.
+                  borderColor: status === "success" ? COLOR_SUCCESS : COLOR_ERROR,
+                  "& .MuiAlert-icon": { color: status === "success" ? COLOR_SUCCESS : COLOR_ERROR },
                 }}
               >
                 {message}

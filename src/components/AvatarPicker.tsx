@@ -1,7 +1,7 @@
 import { Box, Stack, Typography } from "@mui/material";
 import { AVATAR_PRESETS } from "../data/avatars";
 import { PlayerAvatar } from "./PlayerAvatar";
-import { ACCENT_BLUE, SURFACE_BORDER, TEXT_SECONDARY } from "../constants";
+import { ACCENT_PRIMARY, SURFACE_BORDER, TEXT_SECONDARY } from "../constants";
 
 interface AvatarPickerProps {
   /** Username used to render the "Default" (initials) preview. */
@@ -65,11 +65,11 @@ export function AvatarPicker({ username, value, onChange, disabled, label = "Ava
                 lineHeight: 0,
                 cursor: disabled ? "default" : "pointer",
                 opacity: disabled ? 0.6 : 1,
-                border: `2px solid ${selected ? ACCENT_BLUE : "transparent"}`,
-                boxShadow: selected ? "0 0 0 3px rgba(77, 141, 255, 0.25)" : "none",
+                border: `2px solid ${selected ? ACCENT_PRIMARY : "transparent"}`,
+                boxShadow: selected ? "0 0 0 3px rgba(201, 162, 39, 0.25)" : "none",
                 transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-                "&:hover": { borderColor: selected ? ACCENT_BLUE : disabled ? "transparent" : SURFACE_BORDER },
-                "&:focus-visible": { outline: "none", borderColor: ACCENT_BLUE },
+                "&:hover": { borderColor: selected ? ACCENT_PRIMARY : disabled ? "transparent" : SURFACE_BORDER },
+                "&:focus-visible": { outline: "none", borderColor: ACCENT_PRIMARY },
               }}
             >
               <PlayerAvatar username={username} avatarKey={option.key} size={44} title={option.label} />

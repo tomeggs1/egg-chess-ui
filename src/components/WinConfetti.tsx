@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Box } from "@mui/material";
 import confetti from "canvas-confetti";
-import { ACCENT_AMBER, ACCENT_BLUE, ACCENT_GREEN, ACCENT_PURPLE } from "../constants";
+import { ACCENT_AMBER, ACCENT_PRIMARY, ACCENT_GREEN, ACCENT_DECOR } from "../constants";
 
 // Brand accents (plus white) so the celebration matches the app's palette.
-const COLORS = [ACCENT_BLUE, ACCENT_PURPLE, ACCENT_GREEN, ACCENT_AMBER, "#ffffff"];
+const COLORS = [ACCENT_PRIMARY, ACCENT_DECOR, ACCENT_GREEN, ACCENT_AMBER, "#ffffff"];
 
 /**
  * A one-shot confetti burst, fired when `celebrate` turns true (a live win).

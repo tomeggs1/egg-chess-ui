@@ -2,7 +2,8 @@ import { useState, type FormEvent } from "react";
 import { login } from "../api/auth";
 import { ApiError } from "../api/client";
 import styles from "./LoginPage.module.css";
-import { MAIN_BLUE } from "../constants";
+import { Typography } from "@mui/material";
+import { CTA_PRIMARY, TEXT_PRIMARY } from "../constants";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -29,7 +30,9 @@ export default function LoginPage() {
 
   return (
     <section className={styles.wrapper}>
-      <h1>Login</h1>
+      <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY, mb: 1 }}>
+        Login
+      </Typography>
       <form className={styles.form} onSubmit={handleSubmit}>
         <label className={styles.field}>
           <span>Username</span>
@@ -51,7 +54,7 @@ export default function LoginPage() {
             required
           />
         </label>
-        <button type="submit" disabled={status === "submitting"} style={{ backgroundColor: MAIN_BLUE }}>
+        <button type="submit" disabled={status === "submitting"} style={{ backgroundColor: CTA_PRIMARY }}>
           {status === "submitting" ? "Signing in…" : "Log in"}
         </button>
       </form>

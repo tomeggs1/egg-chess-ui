@@ -9,9 +9,9 @@ import { useBoardTheme } from "./BoardThemeContext";
 import { BoardDecals } from "./BoardDecals";
 import { BoardSeams } from "./BoardSeams";
 import { boardTileSrc, boardVariantCount, boardDecals } from "../data/boardAssets";
-import { tileVariant, tileRotation } from "../data/boardThemes";
+import { tileVariant, tileRotation, squaresFor } from "../data/boardThemes";
 import type { MoveTarget } from "./moves";
-import { ACCENT_PURPLE, COLOR_ERROR, COLOR_ERROR_TRANSPARENT, MAIN_BLUE } from "../constants";
+import { ACCENT_DECOR, COLOR_ERROR, COLOR_ERROR_TRANSPARENT, CTA_PRIMARY } from "../constants";
 
 /** An arrow drawn from one square to another (e.g. a suggested move). */
 export interface BoardArrow {
@@ -69,12 +69,10 @@ const beamGrow = keyframes`
   to { stroke-dashoffset: 0; }
 `;
 
-const LIGHT_SQUARE = "#ebecd0";
-const DARK_SQUARE = "#779556";
-// Soft diagonal sheen per square: a hair lighter at the top-left, darker at the
-// bottom-right, so the board reads as a subtly lit surface rather than flat fills.
-const LIGHT_SQUARE_BG = "linear-gradient(135deg, #f3f4e2 0%, #e6e7ca 55%, #dcddbc 100%)";
-const DARK_SQUARE_BG = "linear-gradient(135deg, #85a267 0%, #6f8f50 55%, #637f46 100%)";
+// Square colors now come from the active board theme (see squaresFor). Each
+// theme supplies flat fills plus an optional diagonal sheen — a hair lighter at
+// the top-left, darker at the bottom-right — so the board reads as a subtly lit
+// surface rather than flat color.
 // Faint procedural grain (SVG turbulence, no asset file) for a bit of material.
 const NOISE =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
@@ -84,11 +82,13 @@ const KING_HEIGHT_PCT = 94;
 // Square-canvas sprite sets (theme.squareCanvas) fill this share of the cell,
 // centered. Near-full since their art already includes internal padding.
 const SQUARE_CANVAS_FILL_PCT = 96;
-// Neutral carved-stone frame: a raised gray surround that reads as a physical
-// board edge without a color that fights any theme (grass/sand, slate, green).
+// Carved-stone frame: a raised surround that reads as a physical board edge.
+// Deliberately low-chroma so it doesn't fight any board theme (grass/sand,
+// slate, green) — but WARM rather than the cool grey it used to be, which was
+// the one cool element left on an otherwise warm-stone page.
 const FRAME_PAD = 16; // px of stone border around the playfield
-// Diagonal bevel: lit gray at the top-left → darker gray at the bottom-right.
-const STONE_FRAME_BG = "linear-gradient(150deg, #767a80 0%, #565a60 52%, #43464b 100%)";
+// Diagonal bevel: lit stone at the top-left → shadowed at the bottom-right.
+const STONE_FRAME_BG = "linear-gradient(150deg, #6f665a 0%, #554d43 52%, #3f3830 100%)";
 const FRAME_SHADOW = [
   "inset 0 2px 1px rgba(255,255,255,0.18)", // top inner bevel highlight
   "inset 0 -5px 9px rgba(0,0,0,0.5)", // bottom inner shadow (raised look)
@@ -96,7 +96,7 @@ const FRAME_SHADOW = [
   "0 16px 34px rgba(0,0,0,0.5)", // grounding drop shadow
 ].join(", ");
 const GRID_RING = [
-  "0 0 0 3px #3b3e43", // dark stone trim ring
+  "0 0 0 3px #37312a", // dark stone trim ring (warm, matching the frame)
   "0 0 0 4px rgba(0,0,0,0.5)", // thin dark line just outside the trim
   "inset 0 0 0 2px rgba(0,0,0,0.28)", // inner edge for the squares
 ].join(", ");
@@ -125,6 +125,7 @@ export function Board({
 }: BoardProps) {
   const { theme } = usePieceTheme();
   const { theme: boardTheme } = useBoardTheme();
+  const squares = squaresFor(boardTheme);
   const boardVariants = boardVariantCount(boardTheme);
   const decals = boardDecals(boardTheme);
 
@@ -239,9 +240,9 @@ export function Board({
                     position: "relative",
                     cursor: onSquareClick ? "pointer" : "default",
                     // Solid color is always the fallback (also the Classic look base).
-                    backgroundColor: isLight ? LIGHT_SQUARE : DARK_SQUARE,
-                    // Classic gradient only; image tiles render as a rotated child layer below.
-                    backgroundImage: tile ? undefined : isLight ? LIGHT_SQUARE_BG : DARK_SQUARE_BG,
+                    backgroundColor: isLight ? squares.light : squares.dark,
+                    // CSS sheen only; image tiles render as a rotated child layer below.
+                    backgroundImage: tile ? undefined : isLight ? squares.lightBg : squares.darkBg,
                     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.14)",
                     minWidth: 0,
                     minHeight: 0,
@@ -380,8 +381,8 @@ export function Board({
                         position: "absolute",
                         // Extend past the cell so the highlight covers the tile edge/seam.
                         inset: "-3px",
-                        backgroundColor: "rgba(77,141,255,0.30)",
-                        boxShadow: `inset 0 0 0 3px ${MAIN_BLUE}`,
+                        backgroundColor: "rgba(201,162,39,0.30)",
+                        boxShadow: `inset 0 0 0 3px ${CTA_PRIMARY}`,
                         pointerEvents: "none",
                         zIndex: 1,
                       }}
@@ -393,8 +394,8 @@ export function Board({
                       sx={{
                         position: "absolute",
                         inset: 0,
-                        backgroundColor: "rgba(168,85,247,0.22)",
-                        boxShadow: `inset 0 0 0 3px ${ACCENT_PURPLE}`,
+                        backgroundColor: "rgba(34,211,238,0.22)",
+                        boxShadow: `inset 0 0 0 3px ${ACCENT_DECOR}`,
                         pointerEvents: "none",
                         zIndex: 1,
                       }}
@@ -412,7 +413,7 @@ export function Board({
                         transform: "translate(-50%, -50%)",
                         borderRadius: "50%",
                         // Dual-tone: pale core reads on dark tiles, dark ring/shadow on light tiles.
-                        backgroundColor: "#143d9589",
+                        backgroundColor: "#8c6f1889",
                         boxShadow: "0 0 0 1px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.5)",
                         pointerEvents: "none",
                         zIndex: 1,

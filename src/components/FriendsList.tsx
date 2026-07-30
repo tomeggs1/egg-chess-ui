@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
 import { Box, CircularProgress, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from "@mui/material";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
-import SportsEsportsRoundedIcon from "@mui/icons-material/SportsEsportsRounded";
+import { Icon } from "../icons";
 import { useFriends } from "../hooks/useFriends";
 import { useOnlineFriends } from "../hooks/usePresence";
 import { useAuth } from "../auth/AuthContext";
@@ -10,7 +8,7 @@ import { PlayerBadge } from "./PlayerBadge";
 import StartGameDialog from "./StartGameDialog";
 import type { PlayerSummary } from "../api/friends";
 import { OpponentType } from "../data/types";
-import { ACCENT_BLUE, SURFACE_BORDER, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import { ACCENT_PRIMARY, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 
 // Human "time ago" for a last-seen timestamp.
 function timeAgo(iso: string): string {
@@ -31,18 +29,6 @@ function presenceText(online: boolean | undefined, lastSeenAt?: string | null): 
   if (lastSeenAt) return `Last online ${timeAgo(lastSeenAt)}`;
   return "Offline";
 }
-
-// Dark, glassy field styling matching the login/sign-up dialogs.
-const searchFieldSx = {
-  "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: "10px",
-    "& fieldset": { borderColor: SURFACE_BORDER },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE, borderWidth: "1.5px" },
-  },
-};
 
 // Centered placeholder used for the loading / error / empty states.
 function CenteredState({ children }: { children: React.ReactNode }) {
@@ -78,7 +64,7 @@ export function FriendsList() {
   if (isLoading) {
     return (
       <CenteredState>
-        <CircularProgress size={28} sx={{ color: ACCENT_BLUE }} />
+        <CircularProgress size={28} sx={{ color: ACCENT_PRIMARY }} />
       </CenteredState>
     );
   }
@@ -96,7 +82,7 @@ export function FriendsList() {
   if (friends.length === 0) {
     return (
       <CenteredState>
-        <GroupRoundedIcon sx={{ fontSize: 44, color: TEXT_MUTED }} />
+        <Icon name="friends" sx={{ fontSize: 44, color: TEXT_MUTED }} />
         <Typography variant="subtitle1" sx={{ color: TEXT_PRIMARY, fontWeight: 600 }}>
           No friends yet
         </Typography>
@@ -119,12 +105,11 @@ export function FriendsList() {
           input: {
             startAdornment: (
               <InputAdornment position="start">
-                <SearchRoundedIcon fontSize="small" sx={{ color: TEXT_MUTED }} />
+                <Icon name="search" fontSize="small" sx={{ color: TEXT_MUTED }} />
               </InputAdornment>
             ),
           },
         }}
-        sx={searchFieldSx}
       />
 
       {filtered.length === 0 ? (
@@ -146,7 +131,7 @@ export function FriendsList() {
                     py: 1,
                     px: 1,
                     borderRadius: "10px",
-                    "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.04)" },
+                    "&:hover": { backgroundColor: "rgba(255, 235, 190, 0.04)" },
                   }}
                 >
                   <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -163,9 +148,9 @@ export function FriendsList() {
                       size="small"
                       aria-label={`Challenge ${friend.username}`}
                       onClick={() => setChallengeFriend(friend)}
-                      sx={{ color: ACCENT_BLUE }}
+                      sx={{ color: ACCENT_PRIMARY }}
                     >
-                      <SportsEsportsRoundedIcon fontSize="small" />
+                      <Icon name="play" fontSize="small" />
                     </IconButton>
                   )}
                 </Stack>

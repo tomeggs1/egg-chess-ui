@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import styles from "./Layout.module.css";
 import Stack from "@mui/material/Stack";
 import NavBar from "./NavBar";
+import StoneDivider from "./StoneDivider";
 import { useRealtime } from "../../hooks/useRealtime";
 import { useAuth } from "../../auth/AuthContext";
 import { ChallengeManager } from "../ChallengeManager";
@@ -15,6 +16,7 @@ export default function Layout() {
     <div className={styles.shell}>
       <Stack direction="row">
         <NavBar />
+        <StoneDivider />
 
         <main className={styles.main}>
           <Outlet />

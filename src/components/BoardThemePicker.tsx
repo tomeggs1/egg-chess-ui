@@ -1,8 +1,8 @@
 import { Box, Stack, Typography } from "@mui/material";
 import { useBoardTheme } from "../board/BoardThemeContext";
 import { boardTileSrc } from "../data/boardAssets";
-import { CLASSIC_SQUARE, type BoardTheme } from "../data/boardThemes";
-import { ACCENT_BLUE, SURFACE_700, SURFACE_BORDER, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import { squaresFor, type BoardTheme } from "../data/boardThemes";
+import { ACCENT_PRIMARY, SURFACE_700, SURFACE_BORDER, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 
 interface BoardThemePickerProps {
   disabled?: boolean;
@@ -11,6 +11,7 @@ interface BoardThemePickerProps {
 
 // A 2×2 checker preview of the theme's tiles (or the classic colors).
 function ThemeSwatch({ theme }: { theme: BoardTheme }) {
+  const squares = squaresFor(theme);
   // top-left & bottom-right = light, top-right & bottom-left = dark
   const cells: Array<"white" | "black"> = ["white", "black", "black", "white"];
   return (
@@ -31,7 +32,7 @@ function ThemeSwatch({ theme }: { theme: BoardTheme }) {
           <Box
             key={i}
             sx={{
-              backgroundColor: shade === "white" ? CLASSIC_SQUARE.light : CLASSIC_SQUARE.dark,
+              backgroundColor: shade === "white" ? squares.light : squares.dark,
               backgroundImage: tile ? `url(${tile})` : undefined,
               backgroundSize: "cover",
               backgroundPosition: "center",
@@ -85,11 +86,11 @@ export function BoardThemePicker({ disabled, label = "" }: BoardThemePickerProps
                 backgroundColor: SURFACE_700,
                 cursor: disabled ? "default" : "pointer",
                 opacity: disabled ? 0.6 : 1,
-                border: `2px solid ${selected ? ACCENT_BLUE : "transparent"}`,
-                boxShadow: selected ? "0 0 0 3px rgba(77, 141, 255, 0.25)" : "none",
+                border: `2px solid ${selected ? ACCENT_PRIMARY : "transparent"}`,
+                boxShadow: selected ? "0 0 0 3px rgba(201, 162, 39, 0.25)" : "none",
                 transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-                "&:hover": { borderColor: selected ? ACCENT_BLUE : disabled ? "transparent" : SURFACE_BORDER },
-                "&:focus-visible": { outline: "none", borderColor: ACCENT_BLUE },
+                "&:hover": { borderColor: selected ? ACCENT_PRIMARY : disabled ? "transparent" : SURFACE_BORDER },
+                "&:focus-visible": { outline: "none", borderColor: ACCENT_PRIMARY },
               }}
             >
               <ThemeSwatch theme={theme} />

@@ -3,17 +3,14 @@ import {
   Badge,
   Box,
   CircularProgress,
-  Dialog,
   IconButton,
   InputAdornment,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import EditRoundedIcon from "@mui/icons-material/EditSquare";
-import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import { GameDialog } from "./GameDialog";
 import { useAuth } from "../auth/AuthContext";
 import { useFriends } from "../hooks/useFriends";
 import {
@@ -25,12 +22,12 @@ import {
 } from "../hooks/useMessages";
 import type { ConversationResponse } from "../api/messages";
 import type { PlayerSummary } from "../api/friends";
+import { Icon } from "../icons";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { PlayerBadge } from "./PlayerBadge";
 import {
-  ACCENT_BLUE,
+  ACCENT_PRIMARY,
   SURFACE_700,
-  SURFACE_800,
   SURFACE_BORDER,
   TEXT_MUTED,
   TEXT_PRIMARY,
@@ -43,17 +40,6 @@ interface MessagesDialogProps {
 }
 
 type View = { name: "list" } | { name: "new" } | { name: "thread"; conversation: ConversationResponse };
-
-const inputSx = {
-  "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: "10px",
-    "& fieldset": { borderColor: SURFACE_BORDER },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE, borderWidth: "1.5px" },
-  },
-};
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -71,7 +57,7 @@ function ConversationList({ onOpen }: { onOpen: (c: ConversationResponse) => voi
   if (isLoading) {
     return (
       <Centered>
-        <CircularProgress size={26} sx={{ color: ACCENT_BLUE }} />
+        <CircularProgress size={26} sx={{ color: ACCENT_PRIMARY }} />
       </Centered>
     );
   }
@@ -102,7 +88,7 @@ function ConversationList({ onOpen }: { onOpen: (c: ConversationResponse) => voi
             py: 1.5,
             cursor: "pointer",
             borderBottom: `1px solid ${SURFACE_BORDER}`,
-            "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.04)" },
+            "&:hover": { backgroundColor: "rgba(255, 235, 190, 0.04)" },
           }}
         >
           <PlayerAvatar
@@ -145,7 +131,7 @@ function NewConversation({ onStarted }: { onStarted: (c: ConversationResponse) =
   if (isLoading) {
     return (
       <Centered>
-        <CircularProgress size={26} sx={{ color: ACCENT_BLUE }} />
+        <CircularProgress size={26} sx={{ color: ACCENT_PRIMARY }} />
       </Centered>
     );
   }
@@ -170,7 +156,7 @@ function NewConversation({ onStarted }: { onStarted: (c: ConversationResponse) =
             py: 1.25,
             cursor: startConversation.isPending ? "default" : "pointer",
             borderBottom: `1px solid ${SURFACE_BORDER}`,
-            "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.04)" },
+            "&:hover": { backgroundColor: "rgba(255, 235, 190, 0.04)" },
           }}
         >
           <PlayerBadge username={friend.username} avatarKey={friend.avatarKey} rating={friend.rating} />
@@ -215,7 +201,7 @@ function MessageThread({ conversation }: { conversation: ConversationResponse })
       <Box sx={{ flex: 1, overflowY: "auto", px: 2, py: 1.5 }}>
         {isLoading ? (
           <Centered>
-            <CircularProgress size={26} sx={{ color: ACCENT_BLUE }} />
+            <CircularProgress size={26} sx={{ color: ACCENT_PRIMARY }} />
           </Centered>
         ) : (
           <Stack direction="column" sx={{ gap: 1 }}>
@@ -230,7 +216,7 @@ function MessageThread({ conversation }: { conversation: ConversationResponse })
                     px: 1.5,
                     py: 1,
                     borderRadius: "12px",
-                    backgroundColor: mine ? ACCENT_BLUE : SURFACE_700,
+                    backgroundColor: mine ? ACCENT_PRIMARY : SURFACE_700,
                     color: mine ? "#fff" : TEXT_PRIMARY,
                   }}
                 >
@@ -258,14 +244,13 @@ function MessageThread({ conversation }: { conversation: ConversationResponse })
             input: {
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton type="submit" disabled={!draft.trim()} aria-label="Send" sx={{ color: ACCENT_BLUE }}>
-                    <SendRoundedIcon fontSize="small" />
+                  <IconButton type="submit" disabled={!draft.trim()} aria-label="Send" sx={{ color: ACCENT_PRIMARY }}>
+                    <Icon name="send" fontSize="small" />
                   </IconButton>
                 </InputAdornment>
               ),
             },
           }}
-          sx={inputSx}
         />
       </Box>
     </Stack>
@@ -290,20 +275,23 @@ export default function MessagesDialog({ open, onClose }: MessagesDialogProps) {
         : "Messages";
 
   return (
-    <Dialog
+    <GameDialog
       open={open}
       onClose={onClose}
-      fullWidth
       maxWidth="sm"
+      // Not one of the crested dialogs: no wash, no hairline, and its own
+      // header row carries the close button alongside back/compose.
+      glow={false}
+      hairline="none"
+      showClose={false}
+      bodyPadding={false}
       sx={{
+        // A fixed height and a column layout, so the message list scrolls
+        // inside the paper rather than growing it.
         "& .MuiDialog-paper": {
           height: 540,
           display: "flex",
           flexDirection: "column",
-          backgroundColor: SURFACE_800,
-          border: `1px solid ${SURFACE_BORDER}`,
-          borderRadius: "16px",
-          color: TEXT_PRIMARY,
         },
       }}
     >
@@ -319,12 +307,12 @@ export default function MessagesDialog({ open, onClose }: MessagesDialogProps) {
         )}
         <Typography sx={{ flex: 1, fontWeight: 700, color: TEXT_PRIMARY }}>{title}</Typography>
         {view.name === "list" && (
-          <IconButton size="small" aria-label="New message" onClick={() => setView({ name: "new" })} sx={{ color: ACCENT_BLUE }}>
-            <EditRoundedIcon fontSize="small" />
+          <IconButton size="small" aria-label="New message" onClick={() => setView({ name: "new" })} sx={{ color: ACCENT_PRIMARY }}>
+            <Icon name="compose" fontSize="small" />
           </IconButton>
         )}
         <IconButton size="small" aria-label="Close" onClick={onClose} sx={{ color: TEXT_MUTED }}>
-          <CloseRoundedIcon fontSize="small" />
+          <Icon name="close" fontSize="small" />
         </IconButton>
       </Stack>
 
@@ -332,6 +320,6 @@ export default function MessagesDialog({ open, onClose }: MessagesDialogProps) {
       {view.name === "list" && <ConversationList onOpen={(c) => setView({ name: "thread", conversation: c })} />}
       {view.name === "new" && <NewConversation onStarted={(c) => setView({ name: "thread", conversation: c })} />}
       {view.name === "thread" && <MessageThread conversation={view.conversation} />}
-    </Dialog>
+    </GameDialog>
   );
 }

@@ -29,6 +29,7 @@ import { useGameCatalog } from "../data/GameCatalogContext";
 import { findOpening } from "../data/openings";
 import { useSound } from "../audio/SoundContext";
 import { TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import ExplorerEmblem from "../assets/images/board-explorer-large.webp";
 
 /**
  * Board Explorer — render and experiment with the board outside of real games.
@@ -352,9 +353,7 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
 
   return (
     <section>
-      <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
-        Board Explorer
-      </Typography>
+      <PageHeader />
 
       <Stack direction={{ xs: "column", md: "row" }} sx={{ mt: 2, gap: 3, alignItems: "flex-start" }}>
         <Box
@@ -404,7 +403,7 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
             overflowY: { md: "auto" },
             pr: { md: 0.5 },
             "&::-webkit-scrollbar": { width: "8px" },
-            "&::-webkit-scrollbar-thumb": { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: "4px" },
+            "&::-webkit-scrollbar-thumb": { backgroundColor: "rgba(255,235,190,0.15)", borderRadius: "4px" },
             "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
           }}
         >
@@ -459,12 +458,38 @@ function BoardExplorer({ definitions }: { definitions: GameDefinition[] }) {
  * Loads the game catalog from the API, then renders the explorer. Kept as a thin
  * wrapper so the inner component's hooks only run once definitions are available.
  */
+/**
+ * Page header: emblem + title.
+ *
+ * Shared by the loaded, loading and error states so the page does not reflow as
+ * the catalog resolves. The loading state previously rendered only a spinner,
+ * with no title at all.
+ */
+function PageHeader() {
+  return (
+    <Stack direction="row" sx={{ alignItems: "center", gap: 2 }}>
+      {/* Decorative — the heading beside it already names the page. */}
+      <Box
+        component="img"
+        src={ExplorerEmblem}
+        alt=""
+        aria-hidden
+        sx={{ width: 72, height: 72, flexShrink: 0, objectFit: "contain", display: "block" }}
+      />
+      <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
+        Board Explorer
+      </Typography>
+    </Stack>
+  );
+}
+
 export default function BoardExplorerPage() {
   const { definitions, loading, error } = useGameCatalog();
 
   if (loading) {
     return (
       <section>
+        <PageHeader />
         <Stack direction="row" sx={{ alignItems: "center", gap: 1.5, mt: 4 }}>
           <CircularProgress size={20} sx={{ color: TEXT_SECONDARY }} />
           <Typography variant="body1" sx={{ color: TEXT_SECONDARY }}>
@@ -478,9 +503,7 @@ export default function BoardExplorerPage() {
   if (error || definitions.length === 0) {
     return (
       <section>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
-          Board Explorer
-        </Typography>
+        <PageHeader />
         <Typography variant="body1" sx={{ color: TEXT_SECONDARY, mt: 2 }}>
           Couldn't load the game catalog. Is the service running?
         </Typography>

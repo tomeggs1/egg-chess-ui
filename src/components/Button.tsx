@@ -1,5 +1,5 @@
 import { Button as MuiButton } from "@mui/material";
-import { MAIN_BLUE, TEXT_MUTED } from "../constants";
+import { CTA_PRIMARY, TEXT_MUTED } from "../constants";
 
 interface IButtonProps {
   id: string;
@@ -18,15 +18,9 @@ interface IButtonProps {
   to?: string;
 }
 
-const buttonStyle = {
-  textTransform: "none",
-  borderRadius: "8px",
-  padding: "8px 16px",
-  fontSize: "14px",
-  fontWeight: 500,
-  lineHeight: "20px",
-  fontFamily: "unset",
-};
+// Sizing, radius, weight and sentence-casing now come from the MuiButton
+// defaults in theme/muiTheme.ts — this wrapper only adds the gradient sheen and
+// the caller-supplied base color on top.
 
 // Slight top-to-bottom sheen. Uses translucent white/black so it tints
 // whatever base color is applied, rather than a fixed color.
@@ -35,17 +29,19 @@ const gradientOverlay = "linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, r
 const gradientOverlayHover = "linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(0, 0, 0, 0.08) 100%)";
 
 export const Button: React.FC<IButtonProps> = ({ ...props }) => {
-  const baseColor = props.style?.backgroundColor ?? MAIN_BLUE;
+  const baseColor = props.style?.backgroundColor ?? CTA_PRIMARY;
 
   return (
     <MuiButton
       onClick={props.onClick}
       variant="contained"
       style={{
-        ...buttonStyle,
         ...props.style,
         backgroundColor: props.isDisabled ? "rgba(0, 0, 0, 0.05)" : baseColor,
-        color: props.isDisabled ? TEXT_MUTED : "white",
+        // White unless the caller asked for something else. A light base color
+        // (e.g. the medieval gold) needs dark text, and this used to override
+        // `props.style.color` because it was applied after the spread.
+        color: props.isDisabled ? TEXT_MUTED : (props.style?.color ?? "white"),
       }}
       sx={{
         backgroundImage: gradientOverlay,

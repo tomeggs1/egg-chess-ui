@@ -9,11 +9,15 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "icons": "node scripts/build-icons.mjs",
+    "icons:measure": "node scripts/measure-icons.cjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/eb-garamond": "^5.3.0",
     "@fontsource/roboto": "^5.3.0",
     "@mui/icons-material": "^9.2.0",
     "@mui/material": "^9.2.0",

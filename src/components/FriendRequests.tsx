@@ -10,8 +10,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import PersonAddRoundedIcon from "@mui/icons-material/PersonAddRounded";
 import {
   useAcceptRequest,
   useDeclineRequest,
@@ -22,26 +20,16 @@ import {
   useSendFriendRequest,
 } from "../hooks/useFriends";
 import type { FriendshipResponse, PlayerSearchResult } from "../api/friends";
+import { Icon } from "../icons";
 import { PlayerBadge } from "./PlayerBadge";
 import {
-  ACCENT_BLUE,
+  ACCENT_PRIMARY,
   COLOR_SUCCESS,
   SURFACE_BORDER,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../constants";
-
-const searchFieldSx = {
-  "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: "10px",
-    "& fieldset": { borderColor: SURFACE_BORDER },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE, borderWidth: "1.5px" },
-  },
-};
 
 // A row: player on the left, an action node on the right.
 function Row({ children, action }: { children: React.ReactNode; action: React.ReactNode }) {
@@ -60,8 +48,8 @@ const primaryBtnSx = {
   textTransform: "none",
   fontWeight: 600,
   borderRadius: "8px",
-  backgroundColor: ACCENT_BLUE,
-  "&:hover": { backgroundColor: ACCENT_BLUE },
+  backgroundColor: ACCENT_PRIMARY,
+  "&:hover": { backgroundColor: ACCENT_PRIMARY },
 };
 
 const outlineBtnSx = {
@@ -70,7 +58,7 @@ const outlineBtnSx = {
   borderRadius: "8px",
   color: TEXT_SECONDARY,
   borderColor: SURFACE_BORDER,
-  "&:hover": { borderColor: ACCENT_BLUE, color: TEXT_PRIMARY },
+  "&:hover": { borderColor: ACCENT_PRIMARY, color: TEXT_PRIMARY },
 };
 
 function SearchResults({ query }: { query: string }) {
@@ -81,7 +69,7 @@ function SearchResults({ query }: { query: string }) {
   if (isLoading) {
     return (
       <Stack sx={{ minHeight: 140, alignItems: "center", justifyContent: "center" }}>
-        <CircularProgress size={26} sx={{ color: ACCENT_BLUE }} />
+        <CircularProgress size={26} sx={{ color: ACCENT_PRIMARY }} />
       </Stack>
     );
   }
@@ -125,7 +113,7 @@ function SearchResults({ query }: { query: string }) {
             size="small"
             variant="contained"
             disableElevation
-            startIcon={<PersonAddRoundedIcon />}
+            startIcon={<Icon name="add-friend" />}
             disabled={send.isPending && send.variables === r.username}
             onClick={() => send.mutate(r.username)}
             sx={primaryBtnSx}
@@ -157,7 +145,7 @@ function PendingRequests() {
   if (incomingLoading || outgoingLoading) {
     return (
       <Stack sx={{ minHeight: 140, alignItems: "center", justifyContent: "center" }}>
-        <CircularProgress size={26} sx={{ color: ACCENT_BLUE }} />
+        <CircularProgress size={26} sx={{ color: ACCENT_PRIMARY }} />
       </Stack>
     );
   }
@@ -268,12 +256,11 @@ export function FriendRequests() {
           input: {
             startAdornment: (
               <InputAdornment position="start">
-                <SearchRoundedIcon fontSize="small" sx={{ color: TEXT_MUTED }} />
+                <Icon name="search" fontSize="small" sx={{ color: TEXT_MUTED }} />
               </InputAdornment>
             ),
           },
         }}
-        sx={searchFieldSx}
       />
 
       <Box>{searching ? <SearchResults query={query} /> : <PendingRequests />}</Box>

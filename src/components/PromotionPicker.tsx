@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import { usePieceTheme } from "../pieces/PieceThemeContext";
 import { pieceSrc } from "../data/pieceAssets";
 import type { PieceColor, PieceType } from "../data/pieceThemes";
-import { SURFACE_800, SURFACE_BORDER, TEXT_PRIMARY } from "../constants";
+import { RADIUS, SURFACE_800, SURFACE_BORDER, TEXT_PRIMARY } from "../constants";
 
 interface PromotionPickerProps {
   color: PieceColor;
@@ -54,10 +54,10 @@ export function PromotionPicker({ color, options, onSelect, onCancel }: Promotio
               onClick={() => onSelect(type)}
               sx={{
                 p: 1,
-                borderRadius: "10px",
+                borderRadius: `${RADIUS.md}px`,
                 cursor: "pointer",
                 transition: "background-color 0.12s",
-                "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+                "&:hover": { backgroundColor: "rgba(255,235,190,0.10)" },
               }}
             >
               <Box component="img" src={pieceSrc(theme, color, type)} alt={type} sx={{ height: 56, width: "auto", display: "block" }} />

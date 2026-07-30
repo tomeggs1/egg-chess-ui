@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Button as MuiButton, CircularProgress, Dialog, Stack, Typography } from "@mui/material";
+import { Box, Button as MuiButton, CircularProgress, Stack, Typography } from "@mui/material";
 import {
   useAcceptChallenge,
   useCancelChallenge,
@@ -10,12 +10,12 @@ import {
 } from "../hooks/useChallenges";
 import type { ChallengeResponse } from "../api/challenges";
 import { useGameCatalog } from "../data/GameCatalogContext";
+import { GameDialog } from "./GameDialog";
 import { PlayerBadge } from "./PlayerBadge";
 import {
-  ACCENT_BLUE,
+  ACCENT_PRIMARY,
   COLOR_ERROR,
   COLOR_SUCCESS,
-  SURFACE_800,
   SURFACE_BORDER,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
@@ -40,12 +40,10 @@ function useSecondsLeft(expiresAt: string): number {
   return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 1000));
 }
 
+// Surface styling comes from the MuiDialog defaults in theme/muiTheme.ts —
+// these challenge prompts only add their own padding and minimum width.
 const dialogPaperSx = {
   "& .MuiDialog-paper": {
-    backgroundColor: SURFACE_800,
-    border: `1px solid ${SURFACE_BORDER}`,
-    borderRadius: "16px",
-    color: TEXT_PRIMARY,
     px: 3,
     py: 2.5,
     minWidth: 340,
@@ -73,9 +71,9 @@ function IncomingChallengeModal({ challenge }: { challenge: ChallengeResponse })
   }
 
   return (
-    <Dialog open onClose={() => {}} sx={dialogPaperSx}>
+    <GameDialog open glow={false} hairline="none" bodyPadding={false} sx={dialogPaperSx}>
       <Stack direction="column" sx={{ gap: 1.5, alignItems: "center", textAlign: "center" }}>
-        <Typography sx={{ color: ACCENT_BLUE, fontSize: "16px", fontWeight: "bold" }}>
+        <Typography sx={{ color: ACCENT_PRIMARY, fontSize: "16px", fontWeight: "bold" }}>
           Game challenge · {secondsLeft}s
         </Typography>
         <PlayerBadge
@@ -120,7 +118,7 @@ function IncomingChallengeModal({ challenge }: { challenge: ChallengeResponse })
           </MuiButton>
         </Stack>
       </Stack>
-    </Dialog>
+    </GameDialog>
   );
 }
 
@@ -134,11 +132,11 @@ function OutgoingChallengeModal({ challenge }: { challenge: ChallengeResponse })
   if (secondsLeft <= 0) return null;
 
   return (
-    <Dialog open onClose={() => {}} sx={dialogPaperSx}>
+    <GameDialog open glow={false} hairline="none" bodyPadding={false} sx={dialogPaperSx}>
       <Stack direction="column" sx={{ gap: 1.5, alignItems: "center", textAlign: "center" }}>
         <Stack direction="row" sx={{ gap: 1, alignItems: "center" }}>
-          <CircularProgress size={16} sx={{ color: ACCENT_BLUE }} />
-          <Typography sx={{ color: ACCENT_BLUE, fontSize: "16px", fontWeight: "bold" }}>
+          <CircularProgress size={16} sx={{ color: ACCENT_PRIMARY }} />
+          <Typography sx={{ color: ACCENT_PRIMARY, fontSize: "16px", fontWeight: "bold" }}>
             Game Challenge · {secondsLeft}s
           </Typography>
         </Stack>
@@ -169,7 +167,7 @@ function OutgoingChallengeModal({ challenge }: { challenge: ChallengeResponse })
           </MuiButton>
         </Box>
       </Stack>
-    </Dialog>
+    </GameDialog>
   );
 }
 

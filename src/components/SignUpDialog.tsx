@@ -2,33 +2,27 @@ import { useState, type FormEvent } from "react";
 import {
   Alert,
   Autocomplete,
-  Box,
   Button as MuiButton,
-  Dialog,
   IconButton,
   InputAdornment,
   Stack,
   TextField,
-  Typography,
 } from "@mui/material";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
 import AppLogo from "../assets/images/HPChessLogo.png";
 import { register } from "../api/auth";
 import { ApiError } from "../api/client";
 import { Button } from "./Button";
+import { GameDialog } from "./GameDialog";
 import { AvatarPicker } from "./AvatarPicker";
 import { COUNTRIES } from "../data/countries";
 import {
-  ACCENT_BLUE,
-  ACCENT_PURPLE,
   APP_NAME,
-  MAIN_BLUE_LIGHT,
-  MAIN_PURPLE,
+  CTA_SECONDARY,
   SURFACE_800,
   SURFACE_BORDER,
   TEXT_MUTED,
@@ -53,31 +47,6 @@ const emptyForm = {
 };
 
 const DIALOG_FORM_ID = "signup-form";
-
-// Shared styling for the dark, glassy text fields.
-const fieldSx = {
-  "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: "10px",
-    transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-    "& fieldset": { borderColor: SURFACE_BORDER },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE, borderWidth: "1.5px" },
-    "&.Mui-focused": { boxShadow: `0 0 0 4px rgba(77, 141, 255, 0.12)` },
-  },
-  "& .MuiInputLabel-root": { color: TEXT_MUTED },
-  "& .MuiInputLabel-root.Mui-focused": { color: ACCENT_BLUE },
-  "& .MuiFormHelperText-root": { color: TEXT_MUTED },
-  // Keep disabled fields legible on the dark surface (used while submitting).
-  "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: TEXT_MUTED },
-  "& .MuiInputLabel-root.Mui-disabled": { color: TEXT_MUTED },
-  "& .MuiInputBase-input:-webkit-autofill": {
-    WebkitTextFillColor: TEXT_PRIMARY,
-    WebkitBoxShadow: `0 0 0 100px ${SURFACE_800} inset`,
-    caretColor: TEXT_PRIMARY,
-  },
-};
 
 export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
   const [form, setForm] = useState(emptyForm);
@@ -133,76 +102,14 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
   }
 
   return (
-    <Dialog
+    <GameDialog
       open={open}
       onClose={handleClose}
-      fullWidth
-      maxWidth="xs"
-      sx={{
-        "& .MuiDialog-paper": {
-          position: "relative",
-          overflow: "hidden",
-          backgroundColor: SURFACE_800,
-          backgroundImage: `radial-gradient(circle at 15% -10%, rgba(77, 141, 255, 0.22), transparent 45%), radial-gradient(circle at 110% 0%, rgba(168, 85, 247, 0.22), transparent 42%)`,
-          border: `1px solid rgba(255, 255, 255, 0.12)`,
-          borderRadius: "18px",
-          color: TEXT_PRIMARY,
-          boxShadow: `0 0 0 1px rgba(77, 141, 255, 0.30), 0 0 50px rgba(96, 2, 197, 0.35), 0 40px 90px rgba(0, 0, 0, 0.80)`,
-        },
-      }}
+      closeDisabled={busy}
+      emblem={AppLogo}
+      title="Create your account"
+      subtitle={`Join ${APP_NAME} and start playing`}
     >
-      {/* Top accent hairline (blue → purple). */}
-      <Box
-        aria-hidden
-        sx={{
-          height: "3px",
-          background: `linear-gradient(90deg, ${MAIN_BLUE_LIGHT}, ${ACCENT_PURPLE})`,
-        }}
-      />
-
-      <IconButton
-        aria-label="Close"
-        onClick={handleClose}
-        disabled={status === "submitting"}
-        sx={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          zIndex: 1,
-          color: TEXT_MUTED,
-          "&:hover": { color: TEXT_PRIMARY },
-        }}
-      >
-        <CloseRoundedIcon fontSize="small" />
-      </IconButton>
-
-      {/* Header with a faint chessboard pattern and the Chess++ logo. */}
-      <Box sx={{ position: "relative", overflow: "hidden", px: 3, pt: 3.5, pb: 2 }}>
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            opacity: 0.05,
-            backgroundImage: `linear-gradient(45deg, ${TEXT_PRIMARY} 25%, transparent 25%, transparent 75%, ${TEXT_PRIMARY} 75%), linear-gradient(45deg, ${TEXT_PRIMARY} 25%, transparent 25%, transparent 75%, ${TEXT_PRIMARY} 75%)`,
-            backgroundSize: "34px 34px",
-            backgroundPosition: "0 0, 17px 17px",
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-          }}
-        />
-        <Stack direction="column" sx={{ position: "relative", alignItems: "center", gap: 1.25 }}>
-          <Box component="img" src={AppLogo} alt={APP_NAME} sx={{ width: 100, height: "auto", display: "block" }} />
-          <Typography variant="h5" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
-            Create your account
-          </Typography>
-          <Typography variant="body2" sx={{ color: TEXT_SECONDARY, textAlign: "center" }}>
-            Join {APP_NAME} and start playing
-          </Typography>
-        </Stack>
-      </Box>
-
-      <Box sx={{ px: 3, pb: 3 }}>
         <form id={DIALOG_FORM_ID} onSubmit={handleSubmit}>
           <Stack direction="column" sx={{ gap: "16px", mt: 1 }}>
             <TextField
@@ -223,7 +130,6 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
               required
               disabled={busy}
               fullWidth
-              sx={fieldSx}
             />
             <TextField
               label="Password"
@@ -262,7 +168,6 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
               required
               disabled={busy}
               fullWidth
-              sx={fieldSx}
             />
             <TextField
               label="Email"
@@ -283,7 +188,6 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
               required
               disabled={busy}
               fullWidth
-              sx={fieldSx}
             />
             <Stack direction="row" sx={{ gap: "12px" }}>
               <TextField
@@ -295,7 +199,6 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
                 required
                 disabled={busy}
                 fullWidth
-                sx={fieldSx}
               />
               <TextField
                 label="Last name"
@@ -306,7 +209,6 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
                 required
                 disabled={busy}
                 fullWidth
-                sx={fieldSx}
               />
             </Stack>
             <Autocomplete
@@ -331,16 +233,16 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
                   sx: {
                     "& .MuiAutocomplete-option": { fontSize: "0.9rem" },
                     "& .MuiAutocomplete-option[aria-selected='true']": {
-                      backgroundColor: "rgba(77, 141, 255, 0.20)",
+                      backgroundColor: "rgba(201, 162, 39, 0.20)",
                     },
                     "& .MuiAutocomplete-option.Mui-focused": {
-                      backgroundColor: "rgba(77, 141, 255, 0.15)",
+                      backgroundColor: "rgba(201, 162, 39, 0.15)",
                     },
                   },
                 },
               }}
               renderInput={(params) => (
-                <TextField {...params} label="Country" autoComplete="country-name" required sx={fieldSx} />
+                <TextField {...params} label="Country" autoComplete="country-name" required />
               )}
             />
 
@@ -368,7 +270,7 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
                   textTransform: "none",
                   fontWeight: 600,
                   color: TEXT_SECONDARY,
-                  "&:hover": { color: TEXT_PRIMARY, backgroundColor: "rgba(255, 255, 255, 0.05)" },
+                  "&:hover": { color: TEXT_PRIMARY, backgroundColor: "rgba(255, 235, 190, 0.05)" },
                 }}
               >
                 {status === "success" ? "Close" : "Cancel"}
@@ -381,13 +283,12 @@ export default function SignUpDialog({ open, onClose }: SignUpDialogProps) {
                   form={DIALOG_FORM_ID}
                   isDisabled={status === "submitting"}
                   label={status === "submitting" ? "Creating…" : "Sign Up"}
-                  style={{ backgroundColor: MAIN_PURPLE, padding: "10px 24px" }}
+                  style={{ backgroundColor: CTA_SECONDARY, padding: "10px 24px" }}
                 />
               )}
             </Stack>
           </Stack>
         </form>
-      </Box>
-    </Dialog>
+    </GameDialog>
   );
 }

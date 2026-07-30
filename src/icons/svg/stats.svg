@@ -1,0 +1,14 @@
+<!--
+  stats — extracted from @mui/icons-material/LeaderboardRounded (MIT; the underlying
+  Material Design icon is Apache 2.0). Vendored as a file rather than left as
+  a fallback so it goes through GradientIcon like the rest of the set.
+
+  `stats` and `podium` both fell back to LeaderboardRounded, so Stats and
+  Rankings rendered identically. Now they differ: bar chart here, game-icons
+  podium for rankings.
+
+  To refresh: read the `d` values out of node_modules/@mui/icons-material/LeaderboardRounded.js.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="currentColor" d="M6.5 21H3c-.55 0-1-.45-1-1V10c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1v10c0 .55-.45 1-1 1m7.25-18h-3.5c-.55 0-1 .45-1 1v16c0 .55.45 1 1 1h3.5c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1M21 11h-3.5c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1H21c.55 0 1-.45 1-1v-8c0-.55-.45-1-1-1"/>
+</svg>

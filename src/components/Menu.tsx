@@ -1,13 +1,12 @@
 import { MenuItem, Menu as MuiMenu } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import type { SvgIconComponent } from "@mui/icons-material";
-import { MAIN_BLUE } from "../constants";
+import type { IconComponent } from "../icons";
 
 export interface MenuOption {
   label: string;
   to?: string;
   onClick?: () => void;
-  icon?: SvgIconComponent;
+  icon?: IconComponent;
   iconColor?: string;
 }
 
@@ -31,7 +30,6 @@ export const Menu: React.FC<IMenuProps> = ({ open, anchorEl, onClose, items, anc
       // Flyout to the right of the sidebar item.
       anchorOrigin={anchorOrigin ?? { vertical: "top", horizontal: "right" }}
       transformOrigin={transformOrigin ?? { vertical: "top", horizontal: "left" }}
-      sx={{ fontFamily: "unset", "& .MuiPaper-root": { backgroundColor: MAIN_BLUE, color: "white" } }}
     >
       {items.map(({ label, to, onClick, icon: Icon, iconColor }) => (
         <MenuItem
@@ -41,7 +39,6 @@ export const Menu: React.FC<IMenuProps> = ({ open, anchorEl, onClose, items, anc
             onClick?.();
             onClose();
           }}
-          sx={{ color: "white", gap: "10px" }}
         >
           {Icon && <Icon fontSize="small" htmlColor={iconColor} />}
           {label}

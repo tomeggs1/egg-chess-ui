@@ -1,14 +1,21 @@
-:root {
-  --color-bg: #1a1a1a;
-  --color-surface: #242424;
-  --color-border: #3a3a3a;
-  --color-text: rgba(255, 255, 255, 0.87);
-  --color-muted: rgba(255, 255, 255, 0.55);
-  --color-accent: #646cff;
-  --square-light: #ebecd0;
-  --square-dark: #779556;
+/*
+ * Base element styles only.
+ *
+ * The --color-* custom properties used below are NOT declared here — they are
+ * published on :root from the design tokens by theme/GlobalCss.tsx, so this
+ * file and theme/tokens.ts can never drift apart again.
+ */
 
-  font-family: 'Roboto', system-ui, Avenir, Helvetica, Arial, sans-serif;
+html {
+  /* Static so the first paint (before React mounts and GlobalCss injects the
+     custom properties) is already dark. Mirrors SURFACE_900 in tokens.ts. */
+  background-color: #16130f;
+}
+
+:root {
+  /* Mirrors FONT.body in theme/tokens.ts. Kept literal rather than emitted so
+     text doesn't flash in a fallback face before React mounts. */
+  font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
   line-height: 1.5;
   color-scheme: dark;
   color: var(--color-text);
@@ -33,6 +40,10 @@ a:hover {
   text-decoration: underline;
 }
 
+/*
+ * Bare <button> elements only. MUI's ButtonBase sets its own border/background
+ * at class specificity, so this does not reach <Button>/<IconButton>.
+ */
 button {
   border-radius: 8px;
   border: 1px solid var(--color-border);

@@ -57,7 +57,7 @@ export function GameMovesPanel({ moves, viewedPly, onSelect, standard }: GameMov
     return () => window.removeEventListener("keydown", onKey);
   }, [viewedPly, last, onSelect]);
 
-  const navSx = { color: TEXT_SECONDARY, "&.Mui-disabled": { color: "rgba(255,255,255,0.15)" } };
+  const navSx = { color: TEXT_SECONDARY, "&.Mui-disabled": { color: "rgba(255,235,190,0.15)" } };
 
   return (
     <Stack
@@ -95,7 +95,7 @@ export function GameMovesPanel({ moves, viewedPly, onSelect, standard }: GameMov
           whiteSpace: "nowrap",
           fontVariantNumeric: "tabular-nums",
           "&::-webkit-scrollbar": { height: "6px" },
-          "&::-webkit-scrollbar-thumb": { backgroundColor: "rgba(255,255,255,0.15)", borderRadius: "3px" },
+          "&::-webkit-scrollbar-thumb": { backgroundColor: "rgba(255,235,190,0.15)", borderRadius: "3px" },
           "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
         }}
       >
@@ -124,8 +124,8 @@ export function GameMovesPanel({ moves, viewedPly, onSelect, standard }: GameMov
                   borderRadius: "6px",
                   fontSize: "0.9rem",
                   color: ply === viewedPly ? TEXT_PRIMARY : TEXT_SECONDARY,
-                  backgroundColor: ply === viewedPly ? "rgba(30,77,216,0.30)" : "transparent",
-                  "&:hover": { backgroundColor: ply === viewedPly ? "rgba(30,77,216,0.30)" : "rgba(255,255,255,0.06)" },
+                  backgroundColor: ply === viewedPly ? "rgba(201,162,39,0.30)" : "transparent",
+                  "&:hover": { backgroundColor: ply === viewedPly ? "rgba(201,162,39,0.30)" : "rgba(255,235,190,0.06)" },
                 }}
               >
                 {label(ply)}

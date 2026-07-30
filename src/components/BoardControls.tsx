@@ -1,19 +1,9 @@
 import { useState } from "react";
 import { Box, Collapse, FormControlLabel, MenuItem, Stack, Switch, TextField, Typography } from "@mui/material";
-import SwapVertRoundedIcon from "@mui/icons-material/SwapVertRounded";
-import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import { Button } from "./Button";
-import {
-  ACCENT_BLUE,
-  SURFACE_600,
-  SURFACE_800,
-  SURFACE_BLACK,
-  SURFACE_BORDER,
-  TEXT_MUTED,
-  TEXT_PRIMARY,
-  TEXT_SECONDARY,
-} from "../constants";
+import { Icon } from "../icons";
+import { ACCENT_PRIMARY, SURFACE_600, SURFACE_BLACK, SURFACE_BORDER, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 
 interface BoardControlsProps {
   /** Games to offer in the selector (id/name/icon). */
@@ -26,19 +16,10 @@ interface BoardControlsProps {
   onToggleCoordinates: (value: boolean) => void;
 }
 
-// Dark, glassy field styling to match the app's other selectors.
+// Colors, radius and focus states come from the MuiTextField defaults in
+// theme/muiTheme.ts. This select renders an icon beside its label, so it needs
+// its own flex row.
 const fieldSx = {
-  "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: "10px",
-    "& fieldset": { borderColor: SURFACE_BORDER },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE, borderWidth: "1.5px" },
-  },
-  "& .MuiInputLabel-root": { color: TEXT_MUTED },
-  "& .MuiInputLabel-root.Mui-focused": { color: ACCENT_BLUE },
-  "& .MuiSelect-icon": { color: TEXT_MUTED },
   "& .MuiSelect-select": { display: "flex", alignItems: "center", gap: "10px" },
 };
 
@@ -96,73 +77,57 @@ export function BoardControls({
       </Stack>
       <Collapse in={expanded}>
         <Stack direction="column" sx={{ gap: 2 }}>
-        <TextField
-          select
-          label="Game"
-          value={gameId}
-          onChange={(e) => onGameChange(e.target.value)}
-          size="small"
-          fullWidth
-          sx={fieldSx}
-          slotProps={{
-            select: {
-              MenuProps: {
-                slotProps: {
-                  paper: {
-                    sx: {
-                      bgcolor: SURFACE_800,
-                      color: TEXT_PRIMARY,
-                      border: `1px solid ${SURFACE_BORDER}`,
-                      "& .MuiMenuItem-root.Mui-selected": { backgroundColor: "rgba(77, 141, 255, 0.20)" },
-                      "& .MuiMenuItem-root.Mui-focusVisible, & .MuiMenuItem-root:hover": {
-                        backgroundColor: "rgba(77, 141, 255, 0.15)",
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          }}
-        >
-          {games.map((g) => (
-            <MenuItem key={g.id} value={g.id} sx={{ display: "flex", gap: "10px", alignItems: "center" }}>
-              <Box component="img" src={g.icon} alt="" sx={{ width: 20, height: 20, borderRadius: "4px" }} />
-              {g.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          <TextField
+            select
+            label="Game"
+            value={gameId}
+            onChange={(e) => onGameChange(e.target.value)}
+            size="small"
+            fullWidth
+            sx={fieldSx}
+            slotProps={{
+              select: {},
+            }}
+          >
+            {games.map((g) => (
+              <MenuItem key={g.id} value={g.id} sx={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <Box component="img" src={g.icon} alt="" sx={{ width: 20, height: 20, borderRadius: "4px" }} />
+                {g.name}
+              </MenuItem>
+            ))}
+          </TextField>
 
-        <Stack direction="row" sx={{ justifyContent: "space-between", gap: 1 }}>
-          <Button
-            id="flip-board"
-            type="primary"
-            label="Flip board"
-            onClick={onFlip}
-            startIcon={<SwapVertRoundedIcon fontSize="small" />}
-          />
-          <Button
-            id="reset-board"
-            type="secondary"
-            label="Reset Game"
-            onClick={onReset}
-            startIcon={<RestartAltRoundedIcon fontSize="small" />}
-            style={{ backgroundColor: SURFACE_600 }}
-          />
-        </Stack>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={showCoordinates}
-              onChange={(e) => onToggleCoordinates(e.target.checked)}
-              sx={{
-                "& .MuiSwitch-switchBase.Mui-checked": { color: ACCENT_BLUE },
-                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: ACCENT_BLUE },
-              }}
+          <Stack direction="row" sx={{ justifyContent: "space-between", gap: 1 }}>
+            <Button
+              id="flip-board"
+              type="primary"
+              label="Flip board"
+              onClick={onFlip}
+              startIcon={<Icon name="flip-board" fontSize="medium" />}
             />
-          }
-          label="Show Coordinates"
-          sx={{ color: TEXT_SECONDARY, m: 0 }}
-        />
+            <Button
+              id="reset-board"
+              type="secondary"
+              label="Reset Game"
+              onClick={onReset}
+              startIcon={<Icon name="restart" fontSize="medium" />}
+              style={{ backgroundColor: SURFACE_600 }}
+            />
+          </Stack>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showCoordinates}
+                onChange={(e) => onToggleCoordinates(e.target.checked)}
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": { color: ACCENT_PRIMARY },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: ACCENT_PRIMARY },
+                }}
+              />
+            }
+            label="Show Coordinates"
+            sx={{ color: TEXT_SECONDARY, m: 0 }}
+          />
         </Stack>
       </Collapse>
     </Box>

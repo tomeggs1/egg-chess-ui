@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Badge, IconButton, Tooltip } from "@mui/material";
-import MessagesIcon from "@mui/icons-material/Email";
+import { SmallIcon } from "./SmallIcon";
 import { useTotalUnreadMessages } from "../hooks/useMessages";
 import MessagesDialog from "./MessagesDialog";
-import { ACCENT_BLUE } from "../constants";
 
 /**
  * The nav-bar Messages entry: a badge showing total unread messages, opening
@@ -21,7 +20,7 @@ export function MessagesButton({ tooltip }: { tooltip?: string }) {
   const button = (
     <IconButton onClick={() => setOpen(true)} aria-label="Messages">
       <Badge badgeContent={unread.data ?? 0} max={99} color="error">
-        <MessagesIcon sx={{ color: ACCENT_BLUE }} />
+        <SmallIcon name="messages" />
       </Badge>
     </IconButton>
   );

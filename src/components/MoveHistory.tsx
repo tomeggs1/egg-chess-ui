@@ -6,7 +6,7 @@ import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import LastPageRoundedIcon from "@mui/icons-material/LastPageRounded";
 import { moveText, type MoveRecord } from "../board/history";
-import { ACCENT_BLUE, SURFACE_BLACK, SURFACE_BORDER, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import { ACCENT_PRIMARY, SURFACE_BLACK, SURFACE_BORDER, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 
 export type Notation = "uci" | "san";
 
@@ -66,8 +66,8 @@ export function MoveHistory({
           fontVariantNumeric: "tabular-nums",
           fontSize: "0.85rem",
           color: active ? TEXT_PRIMARY : TEXT_SECONDARY,
-          backgroundColor: active ? "rgba(77,141,255,0.25)" : "transparent",
-          "&:hover": { backgroundColor: active ? "rgba(77,141,255,0.25)" : "rgba(255,255,255,0.06)" },
+          backgroundColor: active ? "rgba(201,162,39,0.25)" : "transparent",
+          "&:hover": { backgroundColor: active ? "rgba(201,162,39,0.25)" : "rgba(255,235,190,0.06)" },
         }}
       >
         {label(ply)}
@@ -75,7 +75,7 @@ export function MoveHistory({
     );
   };
 
-  const navSx = { color: TEXT_SECONDARY, "&.Mui-disabled": { color: "rgba(255,255,255,0.15)" } };
+  const navSx = { color: TEXT_SECONDARY, "&.Mui-disabled": { color: "rgba(255,235,190,0.15)" } };
 
   return (
     <Box
@@ -133,8 +133,8 @@ export function MoveHistory({
                   borderColor: SURFACE_BORDER,
                   "&.Mui-selected": {
                     color: TEXT_PRIMARY,
-                    backgroundColor: ACCENT_BLUE,
-                    "&:hover": { backgroundColor: ACCENT_BLUE },
+                    backgroundColor: ACCENT_PRIMARY,
+                    "&:hover": { backgroundColor: ACCENT_PRIMARY },
                   },
                 },
               }}

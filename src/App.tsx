@@ -10,6 +10,7 @@ import BoardExplorerPage from "./pages/BoardExplorerPage";
 import GamePage from "./pages/GamePage";
 import GameHistoryPage from "./pages/GameHistoryPage";
 import RankingsPage from "./pages/RankingsPage";
+import DailyPuzzlePage from "./pages/DailyPuzzlePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { GameCatalogProvider } from "./data/GameCatalogContext";
 
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="learn/board-explorer" element={<BoardExplorerPage />} />
         <Route path="play/history" element={<GameHistoryPage />} />
         <Route path="rankings" element={<RankingsPage />} />
+        <Route path="puzzles/daily" element={<DailyPuzzlePage />} />
         <Route path="game/:gameId" element={<GamePage />} />
         <Route path="*" element={<NotFoundPage />} />
         </Route>

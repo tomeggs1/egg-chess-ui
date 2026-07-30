@@ -1,7 +1,7 @@
 import { Box, Stack, Typography } from "@mui/material";
 import { usePieceTheme } from "../pieces/PieceThemeContext";
 import { pieceSrc } from "../data/pieceAssets";
-import { ACCENT_BLUE, SURFACE_700, SURFACE_BORDER, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
+import { ACCENT_PRIMARY, SURFACE_700, SURFACE_BORDER, TEXT_PRIMARY, TEXT_SECONDARY } from "../constants";
 
 interface PieceThemePickerProps {
   disabled?: boolean;
@@ -48,11 +48,11 @@ export function PieceThemePicker({ disabled, label = "" }: PieceThemePickerProps
                 backgroundColor: SURFACE_700,
                 cursor: disabled ? "default" : "pointer",
                 opacity: disabled ? 0.6 : 1,
-                border: `2px solid ${selected ? ACCENT_BLUE : "transparent"}`,
-                boxShadow: selected ? "0 0 0 3px rgba(77, 141, 255, 0.25)" : "none",
+                border: `2px solid ${selected ? ACCENT_PRIMARY : "transparent"}`,
+                boxShadow: selected ? "0 0 0 3px rgba(201, 162, 39, 0.25)" : "none",
                 transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-                "&:hover": { borderColor: selected ? ACCENT_BLUE : disabled ? "transparent" : SURFACE_BORDER },
-                "&:focus-visible": { outline: "none", borderColor: ACCENT_BLUE },
+                "&:hover": { borderColor: selected ? ACCENT_PRIMARY : disabled ? "transparent" : SURFACE_BORDER },
+                "&:focus-visible": { outline: "none", borderColor: ACCENT_PRIMARY },
               }}
             >
               <Stack direction="row" sx={{ justifyContent: "center", alignItems: "flex-end", gap: 0.5, height: 56 }}>

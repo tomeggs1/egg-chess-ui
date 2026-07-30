@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Badge, Box, IconButton, Popover, Stack, Tooltip, Typography } from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
+import { SmallIcon } from "./SmallIcon";
 import { useNotifications, useMarkNotificationsRead, useUnreadCount } from "../hooks/useNotifications";
 import type { NotificationResponse } from "../api/notifications";
 import { PlayerAvatar } from "./PlayerAvatar";
 import {
-  ACCENT_BLUE,
+  ACCENT_PRIMARY,
   SURFACE_800,
   SURFACE_BORDER,
   TEXT_MUTED,
@@ -82,7 +82,7 @@ export function NotificationsBell({ onNavigate, tooltip }: NotificationsBellProp
         const button = (
           <IconButton onClick={handleOpen} aria-label="Notifications">
             <Badge badgeContent={unread} max={99} color="error">
-              <NotificationsIcon sx={{ color: ACCENT_BLUE }} />
+              <SmallIcon name="notifications" />
             </Badge>
           </IconButton>
         );
@@ -139,8 +139,8 @@ export function NotificationsBell({ onNavigate, tooltip }: NotificationsBellProp
                   py: 1.25,
                   cursor: "pointer",
                   // Subtle highlight for unread items.
-                  backgroundColor: n.read ? "transparent" : "rgba(77, 141, 255, 0.08)",
-                  "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" },
+                  backgroundColor: n.read ? "transparent" : "rgba(201, 162, 39, 0.08)",
+                  "&:hover": { backgroundColor: "rgba(255, 235, 190, 0.05)" },
                 }}
               >
                 <PlayerAvatar
@@ -157,7 +157,7 @@ export function NotificationsBell({ onNavigate, tooltip }: NotificationsBellProp
                   </Typography>
                 </Box>
                 {!n.read && (
-                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: ACCENT_BLUE, flexShrink: 0 }} />
+                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: ACCENT_PRIMARY, flexShrink: 0 }} />
                 )}
               </Stack>
             ))}

@@ -35,7 +35,7 @@ export function PlayerBadge({ username, avatarKey, rating, size = 36, online, on
           {username}
         </Typography>
         {rating != null && (
-          <Typography noWrap sx={{ color: TEXT_MUTED, fontSize: "0.75rem", lineHeight: 1.2 }}>
+          <Typography noWrap sx={{ color: TEXT_MUTED, fontSize: "0.85rem", lineHeight: 1.2 }}>
             {rating}
           </Typography>
         )}

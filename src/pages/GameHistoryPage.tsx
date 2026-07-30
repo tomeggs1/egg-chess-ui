@@ -20,13 +20,14 @@ import { useMyGameHistory, useMyGameHistorySummary } from "../hooks/useGameHisto
 import { GameHistoryRow } from "../components/GameHistoryRow";
 import { Button } from "../components/Button";
 import WinsIcon from "../assets/images/green-trophy.png";
-import TotalGamesIcon from "../assets/images/blue-rook.png";
+import TotalGamesIcon from "../assets/images/gold-rook.png";
 import DrawsIcon from "../assets/images/gray-handshake.png";
 import LossesIcon from "../assets/images/red-shield.png";
-import FilterIcon from "../assets/images/filter-icon.png";
+import FilterIcon from "../assets/images/filter-large.webp";
+import HistoryEmblem from "../assets/images/history-large.webp";
 import type { GameHistoryFilters } from "../api/games";
 import {
-  ACCENT_BLUE,
+  ACCENT_PRIMARY,
   SURFACE_700,
   SURFACE_800,
   SURFACE_BORDER,
@@ -37,23 +38,16 @@ import {
 
 // Dark styling for the filter fields + their dropdown menus (matches the
 // pattern used in StartGameDialog, since the app has no MUI dark theme).
+// Base styling comes from the MuiTextField defaults in theme/muiTheme.ts.
+// These are page filters rather than form inputs, so they sit on an opaque
+// surface (not the translucent dialog fill) at a fixed compact height.
 const fieldSx = {
-  //minWidth: 150,
   "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
     backgroundColor: SURFACE_800,
-    borderRadius: "10px",
     height: 40,
     transition: "background-color 0.15s ease",
-    "& fieldset": { borderColor: SURFACE_BORDER },
     "&:hover": { backgroundColor: SURFACE_700 },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE },
   },
-  "& .MuiInputLabel-root": { color: TEXT_MUTED },
-  "& .MuiInputLabel-root.Mui-focused": { color: ACCENT_BLUE },
-  "& .MuiSelect-icon": { color: TEXT_MUTED },
-  "& .MuiInputBase-input": { color: TEXT_PRIMARY },
 };
 
 const menuSlotProps = {
@@ -61,21 +55,6 @@ const menuSlotProps = {
   // placeholder, and keep the label floated so it doesn't overlap it.
   select: {
     displayEmpty: true,
-    MenuProps: {
-      slotProps: {
-        paper: {
-          sx: {
-            bgcolor: SURFACE_800,
-            color: TEXT_PRIMARY,
-            border: `1px solid ${SURFACE_BORDER}`,
-            "& .MuiMenuItem-root.Mui-selected": { backgroundColor: "rgba(77,141,255,0.20)" },
-            "& .MuiMenuItem-root.Mui-focusVisible, & .MuiMenuItem-root:hover": {
-              backgroundColor: "rgba(77,141,255,0.15)",
-            },
-          },
-        },
-      },
-    },
   },
   inputLabel: { shrink: true },
 };
@@ -181,9 +160,20 @@ export default function GameHistoryPage() {
 
   return (
     <Box sx={{ maxWidth: 820 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
-        Game History
-      </Typography>
+      {/* Emblem is decorative — the heading beside it already names the page,
+          so alt="" keeps screen readers from announcing "Game History" twice. */}
+      <Stack direction="row" sx={{ alignItems: "center", gap: 2, mb: 1 }}>
+        <Box
+          component="img"
+          src={HistoryEmblem}
+          alt=""
+          aria-hidden
+          sx={{ width: 72, height: 72, flexShrink: 0, objectFit: "contain", display: "block" }}
+        />
+        <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
+          Game History
+        </Typography>
+      </Stack>
 
       <Stack direction="row" sx={{ mb: "10px", mt: "10px", alignItems: "center", gap: "70px", flexWrap: "wrap" }}>
         <StatCard icon={TotalGamesIcon} label="Total Games" value={summary?.total} />
@@ -213,8 +203,8 @@ export default function GameHistoryPage() {
                 src={FilterIcon}
                 alt=""
                 sx={{
-                  width: 30,
-                  height: 30,
+                  width: 40,
+                  height: 40,
                   objectFit: "contain",
                   display: "block",
                   // Dim when no filters are active / panel is closed.
@@ -317,7 +307,7 @@ export default function GameHistoryPage() {
       {/* Results */}
       {isLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-          <CircularProgress sx={{ color: ACCENT_BLUE }} />
+          <CircularProgress sx={{ color: ACCENT_PRIMARY }} />
         </Box>
       ) : isError ? (
         <Typography sx={{ color: TEXT_SECONDARY, py: 4 }}>Couldn't load your games. Please try again.</Typography>

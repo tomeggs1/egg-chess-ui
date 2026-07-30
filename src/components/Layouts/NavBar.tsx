@@ -2,27 +2,16 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import Stack from "@mui/material/Stack";
-import SportsEsportsRoundedIcon from "@mui/icons-material/SportsEsportsRounded";
-import ExtensionRoundedIcon from "@mui/icons-material/ExtensionRounded";
-import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
-import LeaderboardRoundedIcon from "@mui/icons-material/LeaderboardRounded";
-import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
-import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
-import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
-import CasinoRoundedIcon from "@mui/icons-material/CasinoRounded";
-import TodayRoundedIcon from "@mui/icons-material/TodayRounded";
-import HistoryIcon from "@mui/icons-material/History";
-import SettingsIcon from "@mui/icons-material/Settings";
-import GridOnRoundedIcon from "@mui/icons-material/GridOnRounded";
-import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded";
-import FriendsIcon from "@mui/icons-material/Group";
-import LogoutIcon from "@mui/icons-material/Logout";
-import type { SvgIconComponent } from "@mui/icons-material";
-import AppLogo from "../../assets/images/HPChessLogo.png";
-import AppMark from "../../assets/images/blue-rook.png";
-import { ACCENT_BLUE, ACCENT_PURPLE, ACCENT_AMBER, ACCENT_GREEN, MAIN_PURPLE, APP_NAME } from "../../constants";
+// Expanded rail gets the full crest; collapsed keeps the small square mark,
+// which stays legible at 40px where the crest's wordmark would not.
+import AppLogo from "../../assets/images/hp-chess-nav-logo.webp";
+import AppMark from "../../assets/images/HPSmallLogo.png";
+import { SmallIcon, type SmallIconName } from "../SmallIcon";
+import { ACCENT_PRIMARY, ACCENT_DECOR, ACCENT_COOL, ACCENT_GREEN, CTA_SECONDARY, APP_NAME } from "../../constants";
+import { NAV, PLAQUE, RADIUS } from "../../theme/tokens";
+import { Icons, type IconComponent } from "../../icons";
 import { Button } from "../Button";
 import SignUpDialog from "../SignUpDialog";
 import LoginDialog from "../LoginDialog";
@@ -39,8 +28,17 @@ import StartGameDialog from "../StartGameDialog";
 import { OpponentType } from "../../data/types";
 
 // Sidebar widths for the two states; collapsing swaps to a slim icon rail.
-const NAV_WIDTH_EXPANDED = 230;
-const NAV_WIDTH_COLLAPSED = 72;
+const NAV_WIDTH_EXPANDED = 200;
+const NAV_WIDTH_COLLAPSED = 56;
+/**
+ * The crest is sized by HEIGHT, not width.
+ *
+ * It is portrait (0.83) where the old wordmark was landscape (1.06), so at
+ * `width: 100%` it rendered 239px tall against the old 186px — shoving the
+ * whole menu down and running past the rail's 16px padding. Fixing the height
+ * keeps the vertical rhythm and lets the crest sit inside the padding.
+ */
+const NAV_LOGO_HEIGHT = 200;
 // Persisted collapse preference. Only applies while signed in — signed-out
 // users always see the full-width bar.
 const NAV_COLLAPSED_KEY = "navCollapsed";
@@ -49,9 +47,21 @@ type MenuItem = {
   label: string;
   to?: string;
   onClick?: () => void;
-  icon: SvgIconComponent;
+  icon: IconComponent;
   iconColor?: string;
+  /**
+   * Painted crest that replaces `icon` for this row. `icon` stays required, so
+   * anywhere that renders a MenuItem without honouring `image` — the flyout
+   * Menu, for one — still has a glyph to fall back on.
+   */
+  image?: SmallIconName;
   subItems?: MenuItem[];
+  /**
+   * Extra routes that light this item, beyond `to` and its subItems' paths.
+   * For sections whose pages do not live under their own prefix — a game is
+   * part of Play Chess but its URL is /game/:id.
+   */
+  activePaths?: string[];
 };
 
 type Origin = { vertical: "top" | "bottom" | "center"; horizontal: "left" | "right" | "center" };
@@ -68,6 +78,7 @@ type Submenu = {
 export default function NavBar() {
   const navigate = useNavigate();
   const { isAuthenticated, player, logout } = useAuth();
+  const { pathname } = useLocation();
   const [signUpOpen, setSignUpOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [friendsOpen, setFriendsOpen] = useState(false);
@@ -86,8 +97,21 @@ export default function NavBar() {
       return false;
     }
   });
-  const collapsed = isAuthenticated && collapsedPref;
+  // In-game override. Games auto-collapse the rail to give the board room, but
+  // the user can still expand it — that choice is transient and deliberately
+  // does NOT write to collapsedPref, so their global preference survives the
+  // game. null = no override, follow the preference.
+  const [gameOverride, setGameOverride] = useState<boolean | null>(null);
+  const inGame = pathname.startsWith("/game/");
+
+  const collapsed = isAuthenticated && (gameOverride ?? (inGame || collapsedPref));
+
   const toggleCollapsed = () => {
+    if (inGame) {
+      // Just for this game; leave the saved preference alone.
+      setGameOverride(!collapsed);
+      return;
+    }
     setCollapsedPref((prev) => {
       const next = !prev;
       try {
@@ -113,8 +137,8 @@ export default function NavBar() {
 
   // Close any open dialogs/menus on navigation — e.g. when an accepted challenge
   // sends both players into the game, a lingering Friends/Start Game dialog would
-  // otherwise stay on top of the board.
-  const { pathname } = useLocation();
+  // otherwise stay on top of the board. Also drops any in-game rail override, so
+  // entering another game re-collapses.
   useEffect(() => {
     setSignUpOpen(false);
     setLoginOpen(false);
@@ -122,20 +146,52 @@ export default function NavBar() {
     setBoardSettingsOpen(false);
     setStartGameOpen(false);
     setSubmenu(null);
+    setGameOverride(null);
   }, [pathname]);
 
-  // Clear the session, then send the user back to the public homepage.
+  // Send the user to the public homepage, THEN clear the session.
+  //
+  // The order matters. DashboardPage and GameHistoryPage guard themselves with
+  // `if (!isAuthenticated) return <Navigate to="/noauth" replace />`. Clearing
+  // auth first re-renders the page we are still on, its guard fires, and it
+  // replaces the history entry with /noauth — beating the navigate below.
+  // Navigating first means the route is already the (unguarded) homepage when
+  // the auth state clears, so no guard ever runs. React batches both updates
+  // into one render, so there is no flash of the signed-out protected page.
   function handleLogout() {
-    logout();
     navigate("/");
+    logout();
   }
+
+  /**
+   * Is the current route inside this item's section?
+   *
+   * Top-level items with subItems are not NavLinks — they open a flyout — so
+   * they get no `isActive` and would only ever highlight while their flyout is
+   * open. This walks the item's own path plus every subItem path, so "Play
+   * Chess" stays lit on /play/stats and /play/history.
+   *
+   * Prefix matching is on the segment boundary, not the raw string: without the
+   * trailing slash, /play would also claim a hypothetical /playground.
+   */
+  const sectionActive = (item: MenuItem): boolean => {
+    const paths = [
+      item.to,
+      ...(item.subItems ?? []).map((s) => s.to),
+      ...(item.activePaths ?? []),
+    ].filter((p): p is string => p != null && p !== "/");
+    return paths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  };
 
   const menuItems: MenuItem[] = [
     {
       label: "Play Chess",
       to: "/play",
-      icon: SportsEsportsRoundedIcon,
-      iconColor: ACCENT_BLUE,
+      icon: Icons.play,
+      iconColor: ACCENT_PRIMARY,
+      image: "play",
+      // A game is part of this section even though /game/:id sits outside /play.
+      activePaths: ["/game"],
       subItems: [
         {
           label: "Play another user",
@@ -147,8 +203,8 @@ export default function NavBar() {
             setOpponentType(OpponentType.HUMAN);
             setStartGameOpen(true);
           },
-          icon: PersonRoundedIcon,
-          iconColor: ACCENT_BLUE,
+          icon: Icons["play-human"],
+          iconColor: ACCENT_PRIMARY,
         },
         {
           label: "Play bot",
@@ -160,56 +216,64 @@ export default function NavBar() {
             setOpponentType(OpponentType.BOT);
             setStartGameOpen(true);
           },
-          icon: SmartToyRoundedIcon,
-          iconColor: ACCENT_BLUE,
+          icon: Icons["play-bot"],
+          iconColor: ACCENT_PRIMARY,
         },
-        { label: "Stats", to: "/play/stats", icon: LeaderboardRoundedIcon, iconColor: ACCENT_BLUE },
-        { label: "Game History", to: "/play/history", icon: HistoryIcon, iconColor: ACCENT_BLUE },
+        { label: "Stats", to: "/play/stats", icon: Icons.stats, iconColor: ACCENT_PRIMARY },
+        { label: "Game History", to: "/play/history", icon: Icons.history, iconColor: ACCENT_PRIMARY },
       ],
     },
     {
       label: "Chess Puzzles",
       to: "/puzzles",
-      icon: ExtensionRoundedIcon,
-      iconColor: ACCENT_AMBER,
+      icon: Icons.puzzles,
+      iconColor: ACCENT_COOL,
+      image: "puzzle",
       subItems: [
-        { label: "Daily Puzzle", to: "/puzzles/daily", icon: TodayRoundedIcon, iconColor: ACCENT_AMBER },
-        { label: "Random Puzzles", to: "/puzzles/random", icon: CasinoRoundedIcon, iconColor: ACCENT_AMBER },
+        { label: "Daily Puzzle", to: "/puzzles/daily", icon: Icons.daily, iconColor: ACCENT_COOL },
+        { label: "Random Puzzles", to: "/puzzles/random", icon: Icons.random, iconColor: ACCENT_COOL },
       ],
     },
     {
       label: "Learn Chess",
       to: "/learn",
-      icon: SchoolRoundedIcon,
-      iconColor: ACCENT_PURPLE,
+      icon: Icons.learn,
+      iconColor: ACCENT_DECOR,
+      image: "learn",
       subItems: [
-        { label: "Board Explorer", to: "/learn/board-explorer", icon: ExploreRoundedIcon, iconColor: ACCENT_PURPLE },
+        { label: "Board Explorer", to: "/learn/board-explorer", icon: Icons.explore, iconColor: ACCENT_DECOR },
       ],
     },
-    { label: "Rankings", to: "/rankings", icon: LeaderboardRoundedIcon, iconColor: ACCENT_GREEN },
+    {
+      label: "Rankings",
+      to: "/rankings",
+      icon: Icons.podium,
+      iconColor: ACCENT_GREEN,
+      image: "rankings",
+    },
   ];
 
   const settingsMenuItems: MenuItem[] = [
-    { label: "Profile", to: "/settings/profile", icon: PersonRoundedIcon, iconColor: ACCENT_BLUE },
+    { label: "Profile", to: "/settings/profile", icon: Icons.profile, iconColor: ACCENT_PRIMARY },
     {
       label: "Board Settings",
       onClick: () => setBoardSettingsOpen(true),
-      icon: GridOnRoundedIcon,
-      iconColor: ACCENT_BLUE,
+      icon: Icons["board-settings"],
+      iconColor: ACCENT_PRIMARY,
     },
-    { label: "Help & Support", to: "/help", icon: HelpOutlineRoundedIcon, iconColor: ACCENT_BLUE },
-    { label: "Log out", onClick: handleLogout, icon: LogoutIcon, iconColor: ACCENT_BLUE },
+    { label: "Help & Support", to: "/help", icon: Icons.help, iconColor: ACCENT_PRIMARY },
+    { label: "Log out", onClick: handleLogout, icon: Icons.logout, iconColor: ACCENT_PRIMARY },
   ];
 
   return (
     <Stack
       direction="column"
       sx={{
-        backgroundColor: "#222222",
+        backgroundColor: NAV.background,
         width: `${collapsed ? NAV_WIDTH_COLLAPSED : NAV_WIDTH_EXPANDED}px`,
         height: "100vh",
-        color: "#ffffff",
-        padding: collapsed ? "16px 8px" : "16px",
+        color: NAV.textActive,
+        padding: collapsed ? "8px 0px" : "8px 0px",
         justifyContent: "space-between",
         // Pin the sidebar so it stays in view while the main content scrolls.
         position: "sticky",
@@ -230,7 +294,7 @@ export default function NavBar() {
                 onClick={toggleCollapsed}
                 size="small"
                 aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-                sx={{ color: "#b5b5b5", "&:hover": { color: "#ffffff" } }}
+                sx={{ color: NAV.text, "&:hover": { color: NAV.textActive } }}
               >
                 {collapsed ? <ChevronRightRoundedIcon /> : <ChevronLeftRoundedIcon />}
               </IconButton>,
@@ -244,30 +308,72 @@ export default function NavBar() {
               <img
                 src={collapsed ? AppMark : AppLogo}
                 alt={APP_NAME}
-                style={{ width: collapsed ? "40px" : "100%", marginTop: "0px", display: "block" }}
+                style={
+                  collapsed
+                    ? { width: "40px", display: "block" }
+                    : { height: `${NAV_LOGO_HEIGHT}px`, width: "auto", maxWidth: "100%", display: "block" }
+                }
               />
             </NavLink>,
           )}
         </Stack>
         <Stack direction="column" component="nav" sx={{ gap: "4px" }}>
           {menuItems.map((item) => {
-            const { label, to, icon: Icon, iconColor, subItems } = item;
+            const { label, to, icon: Icon, iconColor, image, subItems } = item;
             const hasSubItems = subItems != null && subItems.length > 0;
 
             // Shared row style; collapsed centers the icon and hides the label.
+            //
+            // The active row is a plaque: a CSS moss plate plus a three-sliced
+            // gilt cap. The cap is dropped when collapsed — with no label there
+            // is nothing for it to terminate, and at 40px of content it would
+            // land on the icon.
             const rowSx = (active: boolean) => ({
+              position: "relative",
               alignItems: "center",
               justifyContent: collapsed ? "center" : "flex-start",
               gap: collapsed ? 0 : "12px",
               padding: "10px 12px",
-              borderRadius: "10px",
+              borderRadius: `${RADIUS.md}px`,
               cursor: "pointer",
-              color: active ? "#ffffff" : "#b5b5b5",
-              backgroundColor: active ? "#3a3a3a" : "transparent",
+              color: active ? NAV.textActive : NAV.text,
               fontWeight: active ? 600 : 500,
               transition: "background-color 0.15s ease, color 0.15s ease",
-              "&:hover": { backgroundColor: "#303030", color: "#ffffff" },
+              ...(active
+                ? {
+                    overflow: "hidden",
+                    background: `linear-gradient(180deg, ${PLAQUE.lift} 0%, ${PLAQUE.fill} 22%, ${PLAQUE.fill} 78%, ${PLAQUE.lift} 100%)`,
+                    boxShadow: [
+                      `inset 0 1px 0 rgb(${PLAQUE.rim} / ${PLAQUE.rimAlpha})`,
+                      `inset 0 -1px 0 rgb(${PLAQUE.rim} / ${PLAQUE.rimAlpha * 0.8})`,
+                      "0 1px 3px rgba(0, 0, 0, 0.55)",
+                    ].join(", "),
+                    ...(collapsed
+                      ? {}
+                      : {
+                          paddingRight: `${PLAQUE.cap.width + 6}px`,
+                          "&::after": {
+                            content: '""',
+                            position: "absolute",
+                            top: 0,
+                            bottom: -1,
+                            right: 0,
+                            width: `${PLAQUE.cap.width}px`,
+                            borderStyle: "solid",
+                            borderWidth: `${PLAQUE.cap.rimWidth}px 0`,
+                            borderImage: `url(${PLAQUE.cap.art}) ${PLAQUE.cap.slice} fill`,
+                          },
+                        }),
+                  }
+                : { "&:hover": { backgroundColor: NAV.hover, color: NAV.textActive } }),
             });
+            // Raster art wins over the glyph when a row supplies it. Shared so
+            // the two render branches below cannot drift apart.
+            const glyph = image ? (
+              <SmallIcon name={image} />
+            ) : (
+              <Icon fontSize="medium" htmlColor={iconColor} />
+            );
             // When collapsed, a tooltip stands in for the hidden label.
             const withTip = (node: React.ReactElement) =>
               collapsed ? (
@@ -286,9 +392,9 @@ export default function NavBar() {
                   key={label}
                   direction="row"
                   onClick={(e) => setSubmenu({ anchor: e.currentTarget, items: subItems })}
-                  sx={rowSx(isOpen)}
+                  sx={rowSx(isOpen || sectionActive(item))}
                 >
-                  <Icon fontSize="small" htmlColor={iconColor} />
+                  {glyph}
                   {!collapsed && <span style={{ flex: 1 }}>{label}</span>}
                   {!collapsed && <ChevronRightRoundedIcon fontSize="small" />}
                 </Stack>,
@@ -303,7 +409,7 @@ export default function NavBar() {
                 children={({ isActive }) =>
                   withTip(
                     <Stack direction="row" sx={rowSx(isActive)}>
-                      <Icon fontSize="small" htmlColor={iconColor} />
+                      {glyph}
                       {!collapsed && <span>{label}</span>}
                     </Stack>,
                   )
@@ -327,8 +433,8 @@ export default function NavBar() {
             direction="row"
             sx={{
               padding: "10px 12px",
-              borderRadius: "10px",
-              backgroundColor: "#303030",
+              borderRadius: `${RADIUS.md}px`,
+              backgroundColor: NAV.hover,
               justifyContent: collapsed ? "center" : "flex-start",
             }}
           >
@@ -348,8 +454,10 @@ export default function NavBar() {
             sx={{
               justifyContent: collapsed ? "center" : "space-between",
               alignItems: "center",
-              gap: "10px",
+              gap: "5px",
               marginTop: "-5px",
+              marginLeft: collapsed ? "0px" : "10px",
+              marginRight: collapsed ? "0px" : "10px",
             }}
           >
             {railTip(
@@ -361,7 +469,7 @@ export default function NavBar() {
                 }}
                 aria-label="Friends"
               >
-                <FriendsIcon sx={{ color: ACCENT_BLUE }} />
+                <SmallIcon name="friends" />
               </IconButton>,
             )}
             <MessagesButton tooltip={collapsed ? "Messages" : undefined} />
@@ -385,19 +493,19 @@ export default function NavBar() {
                   })
                 }
               >
-                <SettingsIcon sx={{ color: ACCENT_BLUE }} />
+                <SmallIcon name="settings" />
               </IconButton>,
             )}
           </Stack>
         </Stack>
       ) : (
-        <Stack direction="column" sx={{ gap: "10px" }}>
+        <Stack direction="column" sx={{ gap: "10px", marginLeft: "10px", marginRight: "10px" }}>
           <Button id="login-button" type="primary" label="Log In" onClick={() => setLoginOpen(true)} />
           <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
           <Button
             id="signup-button"
             type="primary"
-            style={{ backgroundColor: MAIN_PURPLE }}
+            style={{ backgroundColor: CTA_SECONDARY }}
             label="Sign Up"
             onClick={() => setSignUpOpen(true)}
           />
@@ -412,18 +520,18 @@ export default function NavBar() {
                   alignItems: "center",
                   gap: "12px",
                   padding: "10px 12px",
-                  borderRadius: "10px",
-                  color: isActive ? "#ffffff" : "#b5b5b5",
-                  backgroundColor: isActive ? "#3a3a3a" : "transparent",
+                  borderRadius: `${RADIUS.md}px`,
+                  color: isActive ? NAV.textActive : NAV.text,
+                  backgroundColor: isActive ? NAV.active : "transparent",
                   fontWeight: isActive ? 600 : 500,
                   transition: "background-color 0.15s ease, color 0.15s ease",
                   "&:hover": {
-                    backgroundColor: "#303030",
-                    color: "#ffffff",
+                    backgroundColor: NAV.hover,
+                    color: NAV.textActive,
                   },
                 }}
               >
-                <HelpOutlineRoundedIcon fontSize="small" htmlColor={ACCENT_BLUE} />
+                <Icons.help fontSize="small" htmlColor={ACCENT_PRIMARY} />
                 <span>Help & Support</span>
               </Stack>
             )}

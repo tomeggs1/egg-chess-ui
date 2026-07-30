@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { Box, Stack, Typography } from "@mui/material";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import { Icon } from "../icons";
 import { Button } from "../components/Button";
 import {
-  MAIN_BLUE_LIGHT,
-  MAIN_PURPLE,
+  ACCENT_BRIGHT,
+  CTA_SECONDARY,
   SURFACE_800,
   SURFACE_BORDER,
   TEXT_PRIMARY,
@@ -39,11 +39,11 @@ export default function NoAuthPage() {
             alignItems: "center",
             justifyContent: "center",
             color: "#fff",
-            background: `linear-gradient(135deg, ${MAIN_BLUE_LIGHT}, ${MAIN_PURPLE})`,
-            boxShadow: "0 10px 24px rgba(96, 2, 197, 0.45)",
+            background: `linear-gradient(135deg, ${ACCENT_BRIGHT}, ${CTA_SECONDARY})`,
+            boxShadow: "0 10px 24px rgba(140, 111, 24, 0.45)",
           }}
         >
-          <LockOutlinedIcon fontSize="large" />
+          <Icon name="lock" fontSize="large" />
         </Box>
 
         <Typography variant="h5" sx={{ fontWeight: 700, color: TEXT_PRIMARY, mb: 1 }}>
@@ -63,7 +63,7 @@ export default function NoAuthPage() {
             type="primary"
             label="Back to Home"
             onClick={() => navigate("/")}
-            style={{ backgroundColor: MAIN_PURPLE, padding: "10px 20px" }}
+            style={{ backgroundColor: CTA_SECONDARY, padding: "10px 20px" }}
           />
         </Stack>
       </Box>

@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type { SvgIconComponent } from "@mui/icons-material";
 import { OpponentType, TimerCategory, TimerOptions } from "../data/types";
 import {
   Alert,
   Box,
   Button as MuiButton,
-  Dialog,
-  IconButton,
   Stack,
   Typography,
   ToggleButtonGroup,
@@ -16,28 +13,33 @@ import {
   Switch,
   MenuItem,
 } from "@mui/material";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import RandomIcon from "@mui/icons-material/PersonSearchRounded";
 import FriendIcon from "@mui/icons-material/HandshakeRounded";
-import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
-import TimerRoundedIcon from "@mui/icons-material/TimerRounded";
-import HourglassEmptyRoundedIcon from "@mui/icons-material/HourglassEmptyRounded";
 import { Button } from "./Button";
 import {
-  ACCENT_BLUE,
-  ACCENT_PURPLE,
-  MAIN_BLUE,
-  MAIN_BLUE_DARK,
-  MAIN_BLUE_LIGHT,
-  MAIN_PURPLE,
+  ACCENT_PRIMARY,
+  BORDER_WIDTH,
+  COLOR_ERROR,
+  COLOR_WARNING,
+  CTA_PRIMARY,
+  CTA_PRIMARY_DARK,
+  ACCENT_BRIGHT,
+  CTA_SECONDARY,
+  FONT,
+  PIECE_EBONY,
+  PIECE_IVORY,
+  RADIUS,
   SURFACE_800,
   SURFACE_BORDER,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../constants";
+import PlayEmblem from "../assets/images/play-large.webp";
+import { Icons, type IconComponent } from "../icons";
+import { uiPieceSrc } from "../data/pieceAssets";
 import { useGameCatalog } from "../data/GameCatalogContext";
 import { PlayerAvatar } from "./PlayerAvatar";
+import { GameDialog } from "./GameDialog";
 import { useAuth } from "../auth/AuthContext";
 import { useFriends } from "../hooks/useFriends";
 import { useOnlineFriends } from "../hooks/usePresence";
@@ -93,6 +95,36 @@ const matchRatingToLabel = (value: number | null) =>
 
 const DIALOG_FORM_ID = "start-game-form";
 
+// Hyphenated roles can't be written as a JSX tag (no bracket access in tag
+// names), so bind it once. Shares art with the `random` role — see icons/index.tsx.
+const RandomIcon = Icons["find-opponent"];
+
+// --- "Play as" swatches ------------------------------------------------------
+// The three squares differ only in fill, so the rest is shared. Note PIECE_EBONY
+// is darker than the panel behind it (1.10:1), so every square carries a border
+// whether selected or not — the dark one would otherwise have no visible edge.
+const playAsSquareSx = {
+  width: "40px",
+  height: "40px",
+  borderRadius: `${RADIUS.sm}px`,
+  marginRight: "5px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+} as const;
+
+const playAsPieceSx = { width: 26, height: 26, objectFit: "contain", display: "block" } as const;
+
+/**
+ * Gilt edge when chosen, bronze otherwise — the same width either way. The
+ * previous 3px-selected / 1px-idle pair changed the swatch's inner area on
+ * selection, which nudged the piece image.
+ */
+const selectedRing = (selected: boolean) => ({
+  border: `${BORDER_WIDTH}px solid ${selected ? ACCENT_PRIMARY : SURFACE_BORDER}`,
+});
+
 // Flattened in category order (Lightning → Quick → Classical) so the
 // Autocomplete's groupBy renders contiguous category sections. Names are unique
 // across categories, so a name is a safe key for the selected value.
@@ -103,35 +135,10 @@ const TIMER_OPTIONS = Object.values(TimerOptions).flat();
 const TIMER_OPTION_IDS = TIMER_OPTIONS.map((t) => t.id);
 const TIMER_BY_ID = Object.fromEntries(TIMER_OPTIONS.map((t) => [t.id, t]));
 
-export const TIMER_CATEGORY_ICON: Record<TimerCategory, SvgIconComponent> = {
-  [TimerCategory.LIGHTNING]: BoltRoundedIcon,
-  [TimerCategory.QUICK]: TimerRoundedIcon,
-  [TimerCategory.LONG]: HourglassEmptyRoundedIcon,
-};
-
-// Shared styling for the dark, glassy text fields.
-const fieldSx = {
-  "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: "10px",
-    transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-    "& fieldset": { borderColor: SURFACE_BORDER },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE, borderWidth: "1.5px" },
-    "&.Mui-focused": { boxShadow: `0 0 0 4px rgba(77, 141, 255, 0.12)` },
-  },
-  "& .MuiInputLabel-root": { color: TEXT_MUTED },
-  "& .MuiInputLabel-root.Mui-focused": { color: ACCENT_BLUE },
-  "& .MuiFormHelperText-root": { color: TEXT_MUTED },
-  // Keep disabled fields legible on the dark surface (used while submitting).
-  "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: TEXT_MUTED },
-  "& .MuiInputLabel-root.Mui-disabled": { color: TEXT_MUTED },
-  "& .MuiInputBase-input:-webkit-autofill": {
-    WebkitTextFillColor: TEXT_PRIMARY,
-    WebkitBoxShadow: `0 0 0 100px ${SURFACE_800} inset`,
-    caretColor: TEXT_PRIMARY,
-  },
+export const TIMER_CATEGORY_ICON: Record<TimerCategory, IconComponent> = {
+  [TimerCategory.LIGHTNING]: Icons["time-lightning"],
+  [TimerCategory.QUICK]: Icons["time-quick"],
+  [TimerCategory.LONG]: Icons["time-long"],
 };
 
 export default function StartGameDialog({ open, onClose, opponentType, presetFriend }: StartGameDialogProps) {
@@ -206,72 +213,12 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
   const randomUnavailable = opponentType === OpponentType.HUMAN && form.opponentSubType === "random";
 
   return (
-    <Dialog
+    <GameDialog
       open={open}
       onClose={handleClose}
-      fullWidth
-      maxWidth="xs"
-      sx={{
-        "& .MuiDialog-paper": {
-          position: "relative",
-          overflow: "hidden",
-          backgroundColor: SURFACE_800,
-          backgroundImage: `radial-gradient(circle at 15% -10%, rgba(77, 141, 255, 0.22), transparent 45%), radial-gradient(circle at 110% 0%, rgba(168, 85, 247, 0.22), transparent 42%)`,
-          border: `1px solid rgba(255, 255, 255, 0.12)`,
-          borderRadius: "18px",
-          color: TEXT_PRIMARY,
-          boxShadow: `0 0 0 1px rgba(77, 141, 255, 0.30), 0 0 50px rgba(96, 2, 197, 0.35), 0 40px 90px rgba(0, 0, 0, 0.80)`,
-        },
-      }}
+      emblem={PlayEmblem}
+      title="Start a New Game"
     >
-      {/* Top accent hairline (blue → purple). */}
-      <Box
-        aria-hidden
-        sx={{
-          height: "3px",
-          background: `linear-gradient(90deg, ${MAIN_BLUE_LIGHT}, ${ACCENT_PURPLE})`,
-        }}
-      />
-
-      <IconButton
-        aria-label="Close"
-        onClick={handleClose}
-        disabled={false}
-        sx={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          zIndex: 1,
-          color: TEXT_MUTED,
-          "&:hover": { color: TEXT_PRIMARY },
-        }}
-      >
-        <CloseRoundedIcon fontSize="small" />
-      </IconButton>
-
-      {/* Header with a faint chessboard pattern and the Chess++ logo. */}
-      <Box sx={{ position: "relative", overflow: "hidden", px: 3, pt: 3.5, pb: 2 }}>
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            opacity: 0.05,
-            backgroundImage: `linear-gradient(45deg, ${TEXT_PRIMARY} 25%, transparent 25%, transparent 75%, ${TEXT_PRIMARY} 75%), linear-gradient(45deg, ${TEXT_PRIMARY} 25%, transparent 25%, transparent 75%, ${TEXT_PRIMARY} 75%)`,
-            backgroundSize: "34px 34px",
-            backgroundPosition: "0 0, 17px 17px",
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-          }}
-        />
-        <Stack direction="column" sx={{ position: "relative", alignItems: "center", gap: 1.25 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
-            Start a New Game
-          </Typography>
-        </Stack>
-      </Box>
-
-      <Box sx={{ px: 3, pb: 3 }}>
         <form id={DIALOG_FORM_ID} onSubmit={handleSubmit}>
           <Stack direction="column" sx={{ gap: "16px", mt: 1 }}>
             <Stack direction="row" sx={{ gap: "4px", alignItems: "flex-start" }}>
@@ -305,17 +252,17 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                       sx: {
                         bgcolor: SURFACE_800,
                         color: TEXT_PRIMARY,
-                        border: `1px solid ${SURFACE_BORDER}`,
+                        border: `${BORDER_WIDTH}px solid ${SURFACE_BORDER}`,
                       },
                     },
                     listbox: {
                       sx: {
                         "& .MuiAutocomplete-option": { fontSize: "0.9rem" },
                         "& .MuiAutocomplete-option[aria-selected='true']": {
-                          backgroundColor: "rgba(77, 141, 255, 0.20)",
+                          backgroundColor: "rgba(201, 162, 39, 0.20)",
                         },
                         "& .MuiAutocomplete-option.Mui-focused": {
-                          backgroundColor: "rgba(77, 141, 255, 0.15)",
+                          backgroundColor: "rgba(201, 162, 39, 0.15)",
                         },
                       },
                     },
@@ -333,7 +280,7 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                           component="img"
                           src={option.icon}
                           alt=""
-                          sx={{ width: 24, height: 24, borderRadius: "4px" }}
+                          sx={{ width: 24, height: 24, borderRadius: `${RADIUS.sm}px` }}
                         />
                         <Typography variant="body2" sx={{ color: TEXT_PRIMARY, marginLeft: "8px" }}>
                           {option.name}
@@ -348,7 +295,6 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                         {...params}
                         autoComplete="game-type"
                         required
-                        sx={fieldSx}
                         slotProps={{
                           ...params.slotProps,
                           input: {
@@ -360,7 +306,7 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                                     component="img"
                                     src={selected.icon}
                                     alt=""
-                                    sx={{ width: 22, height: 22, borderRadius: "4px", ml: "6px", mr: "8px" }}
+                                    sx={{ width: 22, height: 22, borderRadius: `${RADIUS.sm}px`, ml: "6px", mr: "8px" }}
                                   />
                                 )}
                                 {params.slotProps.input.startAdornment}
@@ -407,22 +353,22 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                       sx: {
                         bgcolor: SURFACE_800,
                         color: TEXT_PRIMARY,
-                        border: `1px solid ${SURFACE_BORDER}`,
+                        border: `${BORDER_WIDTH}px solid ${SURFACE_BORDER}`,
                       },
                     },
                     listbox: {
                       sx: {
                         "& .MuiAutocomplete-option": { fontSize: "0.9rem" },
                         "& .MuiAutocomplete-option[aria-selected='true']": {
-                          backgroundColor: "rgba(77, 141, 255, 0.20)",
+                          backgroundColor: "rgba(201, 162, 39, 0.20)",
                         },
                         "& .MuiAutocomplete-option.Mui-focused": {
-                          backgroundColor: "rgba(77, 141, 255, 0.15)",
+                          backgroundColor: "rgba(201, 162, 39, 0.15)",
                         },
                         // Category header styling on the dark paper.
                         "& .MuiAutocomplete-groupLabel": {
-                          backgroundColor: MAIN_BLUE_DARK,
-                          color: ACCENT_BLUE,
+                          backgroundColor: CTA_PRIMARY_DARK,
+                          color: ACCENT_PRIMARY,
                           fontWeight: 700,
                           fontSize: "0.75rem",
                           textTransform: "uppercase",
@@ -451,7 +397,7 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                             top: "-8px",
                           }}
                         >
-                          {Icon && <Icon fontSize="small" sx={{ color: ACCENT_BLUE }} />}
+                          {Icon && <Icon fontSize="small" sx={{ color: ACCENT_PRIMARY }} />}
                           {params.group}
                         </Box>
                         <ul className="MuiAutocomplete-groupUl" style={{ padding: 0, margin: 0 }}>
@@ -476,14 +422,13 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                         {...params}
                         autoComplete="timer"
                         required
-                        sx={fieldSx}
                         slotProps={{
                           ...params.slotProps,
                           input: {
                             ...params.slotProps.input,
                             startAdornment: (
                               <>
-                                {Icon && <Icon fontSize="small" sx={{ color: ACCENT_BLUE, ml: "6px", mr: "8px" }} />}
+                                {Icon && <Icon fontSize="small" sx={{ color: ACCENT_PRIMARY, ml: "6px", mr: "8px" }} />}
                                 {params.slotProps.input.startAdornment}
                               </>
                             ),
@@ -517,19 +462,19 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                       sx={{
                         "& .MuiToggleButton-root": {
                           color: TEXT_PRIMARY,
-                          backgroundColor: "rgba(255, 255, 255, 0.1)",
-                          borderRadius: "10px",
+                          backgroundColor: "rgba(255, 235, 190, 0.10)",
+                          borderRadius: `${RADIUS.md}px`,
                           textTransform: "none",
                           paddingX: "20px",
                           height: "40px",
                           backgroundImage:
                             "linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(0, 0, 0, 0.14) 100%)",
                           //transition: "background-image 0.15s ease, box-shadow 0.15s ease",
-                          "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" },
+                          "&:hover": { backgroundColor: "rgba(255, 235, 190, 0.05)" },
                           "&.Mui-selected": {
                             color: TEXT_PRIMARY,
-                            backgroundColor: MAIN_BLUE,
-                            "&:hover": { backgroundColor: MAIN_BLUE_LIGHT },
+                            backgroundColor: CTA_PRIMARY,
+                            "&:hover": { backgroundColor: ACCENT_BRIGHT },
                           },
                         },
                         "& .MuiToggleButtonGroup-grouped": {
@@ -539,15 +484,15 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                           },
                           // Keep only the left corners rounded for the first item
                           "&:first-of-type": {
-                            borderTopLeftRadius: "8px",
-                            borderBottomLeftRadius: "8px",
+                            borderTopLeftRadius: `${RADIUS.md}px`,
+                            borderBottomLeftRadius: `${RADIUS.md}px`,
                             borderTopRightRadius: 0,
                             borderBottomRightRadius: 0,
                           },
                           // Keep only the right corners rounded for the last item
                           "&:last-of-type": {
-                            borderTopRightRadius: "8px",
-                            borderBottomRightRadius: "8px",
+                            borderTopRightRadius: `${RADIUS.md}px`,
+                            borderBottomRightRadius: `${RADIUS.md}px`,
                             borderTopLeftRadius: 0,
                             borderBottomLeftRadius: 0,
                           },
@@ -583,17 +528,17 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                             sx: {
                               bgcolor: SURFACE_800,
                               color: TEXT_PRIMARY,
-                              border: `1px solid ${SURFACE_BORDER}`,
+                              border: `${BORDER_WIDTH}px solid ${SURFACE_BORDER}`,
                             },
                           },
                           listbox: {
                             sx: {
                               "& .MuiAutocomplete-option": { fontSize: "0.9rem" },
                               "& .MuiAutocomplete-option[aria-selected='true']": {
-                                backgroundColor: "rgba(77, 141, 255, 0.20)",
+                                backgroundColor: "rgba(201, 162, 39, 0.20)",
                               },
                               "& .MuiAutocomplete-option.Mui-focused": {
-                                backgroundColor: "rgba(77, 141, 255, 0.15)",
+                                backgroundColor: "rgba(201, 162, 39, 0.15)",
                               },
                             },
                           },
@@ -634,7 +579,6 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                               label="Friend"
                               autoComplete="friend-name"
                               required
-                              sx={fieldSx}
                               slotProps={{
                                 ...params.slotProps,
                                 input: {
@@ -676,32 +620,11 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                           fullWidth
                           sx={{
                             marginTop: "10px",
-                            ...fieldSx,
-                            "& .MuiOutlinedInput-root": { ...fieldSx["& .MuiOutlinedInput-root"], height: "40px" },
+                            "& .MuiOutlinedInput-root": { height: "40px" },
                             "& .MuiSelect-select": { display: "flex", alignItems: "center", py: 0 },
-                            "& .MuiSelect-icon": { color: TEXT_MUTED },
                           }}
                           slotProps={{
-                            select: {
-                              MenuProps: {
-                                slotProps: {
-                                  paper: {
-                                    sx: {
-                                      bgcolor: SURFACE_800,
-                                      color: TEXT_PRIMARY,
-                                      border: `1px solid ${SURFACE_BORDER}`,
-                                      "& .MuiMenuItem-root": { fontSize: "0.9rem" },
-                                      "& .MuiMenuItem-root.Mui-selected": {
-                                        backgroundColor: "rgba(77, 141, 255, 0.20)",
-                                      },
-                                      "& .MuiMenuItem-root.Mui-focusVisible, & .MuiMenuItem-root:hover": {
-                                        backgroundColor: "rgba(77, 141, 255, 0.15)",
-                                      },
-                                    },
-                                  },
-                                },
-                              },
-                            },
+                            select: {},
                           }}
                         >
                           {Object.keys(matchRatingFromOptions).map((label) => (
@@ -725,32 +648,11 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                           fullWidth
                           sx={{
                             marginTop: "10px",
-                            ...fieldSx,
-                            "& .MuiOutlinedInput-root": { ...fieldSx["& .MuiOutlinedInput-root"], height: "40px" },
+                            "& .MuiOutlinedInput-root": { height: "40px" },
                             "& .MuiSelect-select": { display: "flex", alignItems: "center", py: 0 },
-                            "& .MuiSelect-icon": { color: TEXT_MUTED },
                           }}
                           slotProps={{
-                            select: {
-                              MenuProps: {
-                                slotProps: {
-                                  paper: {
-                                    sx: {
-                                      bgcolor: SURFACE_800,
-                                      color: TEXT_PRIMARY,
-                                      border: `1px solid ${SURFACE_BORDER}`,
-                                      "& .MuiMenuItem-root": { fontSize: "0.9rem" },
-                                      "& .MuiMenuItem-root.Mui-selected": {
-                                        backgroundColor: "rgba(77, 141, 255, 0.20)",
-                                      },
-                                      "& .MuiMenuItem-root.Mui-focusVisible, & .MuiMenuItem-root:hover": {
-                                        backgroundColor: "rgba(77, 141, 255, 0.15)",
-                                      },
-                                    },
-                                  },
-                                },
-                              },
-                            },
+                            select: {},
                           }}
                         >
                           {Object.keys(matchRatingToOptions).map((label) => (
@@ -768,8 +670,8 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                         sx={{
                           marginTop: "10px",
                           color: TEXT_PRIMARY,
-                          borderColor: "rgba(245, 158, 11, 0.5)",
-                          "& .MuiAlert-icon": { color: "#f59e0b" },
+                          borderColor: COLOR_WARNING,
+                          "& .MuiAlert-icon": { color: COLOR_WARNING },
                         }}
                       >
                         Random matchmaking not yet available
@@ -831,41 +733,22 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                 </Typography>
                 <Stack direction="row" sx={{ minWidth: "250px", gap: "20px" }}>
                   <Box
-                    sx={{
-                      width: "40px",
-                      height: "40px",
-                      backgroundColor: "#ffffff",
-                      borderRadius: "4px",
-                      marginRight: "5px",
-                      color: "#000000",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "24px",
-                      cursor: "pointer",
-                      border: form.playAs === "white" ? `3px solid ${ACCENT_BLUE}` : "none",
-                    }}
+                    sx={{ ...playAsSquareSx, backgroundColor: PIECE_IVORY }}
+                    style={selectedRing(form.playAs === "white")}
                     onClick={() => {
                       setForm({ ...form, playAs: "white" });
                     }}
                   >
-                    ♜
+                    <Box component="img" src={uiPieceSrc("white", "rook")} alt="White" sx={playAsPieceSx} />
                   </Box>
 
                   <Box
                     sx={{
-                      width: "40px",
-                      height: "40px",
-                      // Half white (left), half black (right) — the "random color" indicator.
-                      backgroundImage: "linear-gradient(90deg, #ffffff 0 50%, #000000 50% 100%)",
-                      borderRadius: "4px",
-                      marginRight: "5px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: form.playAs === "random" ? `3px solid ${ACCENT_BLUE}` : "1px solid " + TEXT_MUTED,
+                      ...playAsSquareSx,
+                      // Ivory left, ebony right — the "random color" indicator.
+                      backgroundImage: `linear-gradient(90deg, ${PIECE_IVORY} 0 50%, ${PIECE_EBONY} 50% 100%)`,
                     }}
+                    style={selectedRing(form.playAs === "random")}
                     onClick={() => {
                       setForm({ ...form, playAs: "random" });
                     }}
@@ -873,41 +756,28 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                     <Box
                       component="span"
                       sx={{
-                        color: "#ffffff",
-                        backgroundColor: "#000000",
-                        //mixBlendMode: "difference",
-                        fontSize: "20px",
+                        fontFamily: FONT.display,
+                        color: PIECE_IVORY,
+                        backgroundColor: PIECE_EBONY,
+                        fontSize: "16px",
                         fontWeight: 700,
-                        lineHeight: 1,
-                        width: "20px",
-                        paddingX: "6px",
-                        borderRadius: "4px",
-                        border: "1px solid " + TEXT_MUTED,
+                        lineHeight: 1.4,
+                        paddingX: "7px",
+                        borderRadius: `${RADIUS.sm}px`,
+                        border: `${BORDER_WIDTH}px solid ${SURFACE_BORDER}`,
                       }}
                     >
                       ?
                     </Box>
                   </Box>
                   <Box
-                    sx={{
-                      width: "40px",
-                      height: "40px",
-                      backgroundColor: "#000000",
-                      borderRadius: "4px",
-                      marginRight: "5px",
-                      color: "#ffffff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "24px",
-                      cursor: "pointer",
-                      border: form.playAs === "black" ? `3px solid ${ACCENT_BLUE}` : "1px solid " + TEXT_MUTED,
-                    }}
+                    sx={{ ...playAsSquareSx, backgroundColor: PIECE_EBONY }}
+                    style={selectedRing(form.playAs === "black")}
                     onClick={() => {
                       setForm({ ...form, playAs: "black" });
                     }}
                   >
-                    ♜
+                    <Box component="img" src={uiPieceSrc("black", "rook")} alt="Black" sx={playAsPieceSx} />
                   </Box>
                 </Stack>
               </Stack>
@@ -918,8 +788,10 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                 variant="outlined"
                 sx={{
                   color: TEXT_PRIMARY,
-                  borderColor: "rgba(239, 68, 68, 0.5)",
-                  "& .MuiAlert-icon": { color: "#ef4444" },
+                  // Was a hardcoded #ef4444 — the pre-medieval error red, which
+                  // now sits on hue 0 and collides with HP.
+                  borderColor: COLOR_ERROR,
+                  "& .MuiAlert-icon": { color: COLOR_ERROR },
                 }}
               >
                 {challengeError}
@@ -933,7 +805,7 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                   textTransform: "none",
                   fontWeight: 600,
                   color: TEXT_SECONDARY,
-                  "&:hover": { color: TEXT_PRIMARY, backgroundColor: "rgba(255, 255, 255, 0.05)" },
+                  "&:hover": { color: TEXT_PRIMARY, backgroundColor: "rgba(255, 235, 190, 0.05)" },
                 }}
               >
                 {"Cancel"}
@@ -945,12 +817,11 @@ export default function StartGameDialog({ open, onClose, opponentType, presetFri
                 form={DIALOG_FORM_ID}
                 isDisabled={isFormComplete() === false || submitting || randomUnavailable}
                 label={submitting ? "Sending…" : form.opponentSubType === "friend" ? "Send Challenge" : "Start Game"}
-                style={{ backgroundColor: MAIN_PURPLE, padding: "10px 24px" }}
+                style={{ backgroundColor: CTA_SECONDARY, padding: "10px 24px" }}
               />
             </Stack>
           </Stack>
         </form>
-      </Box>
-    </Dialog>
+    </GameDialog>
   );
 }

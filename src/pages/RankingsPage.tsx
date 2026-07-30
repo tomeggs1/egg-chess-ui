@@ -14,15 +14,16 @@ import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import { useAuth } from "../auth/AuthContext";
 import { useGameCatalog } from "../data/GameCatalogContext";
+import RankingsEmblem from "../assets/images/rankings-large.webp";
 import { useRankings } from "../hooks/useRankings";
 import type { RankingSpeed } from "../api/rankings";
 import { PlayerAvatar } from "../components/PlayerAvatar";
 import { CountryFlag } from "../components/CountryFlag";
 import {
   ACCENT_AMBER,
-  ACCENT_BLUE,
-  MAIN_BLUE,
-  MAIN_BLUE_LIGHT,
+  ACCENT_PRIMARY,
+  CTA_PRIMARY,
+  ACCENT_BRIGHT,
   SURFACE_700,
   SURFACE_800,
   SURFACE_BORDER,
@@ -56,39 +57,18 @@ const ROW_GRID = {
   px: "12px",
 };
 
+// Base styling comes from the MuiTextField defaults in theme/muiTheme.ts. As a
+// page filter this sits on an opaque surface at its own fixed size.
 const fieldSx = {
   minWidth: 220,
   "& .MuiOutlinedInput-root": {
-    color: TEXT_PRIMARY,
     backgroundColor: SURFACE_800,
-    borderRadius: "10px",
     height: 44,
-    "& fieldset": { borderColor: SURFACE_BORDER },
-    "&:hover fieldset": { borderColor: ACCENT_BLUE },
-    "&.Mui-focused fieldset": { borderColor: ACCENT_BLUE },
   },
-  "& .MuiInputLabel-root": { color: TEXT_MUTED },
-  "& .MuiInputLabel-root.Mui-focused": { color: ACCENT_BLUE },
-  "& .MuiSelect-icon": { color: TEXT_MUTED },
 };
 
 const menuSlotProps = {
   select: {
-    MenuProps: {
-      slotProps: {
-        paper: {
-          sx: {
-            bgcolor: SURFACE_800,
-            color: TEXT_PRIMARY,
-            border: `1px solid ${SURFACE_BORDER}`,
-            "& .MuiMenuItem-root.Mui-selected": { backgroundColor: "rgba(77,141,255,0.20)" },
-            "& .MuiMenuItem-root.Mui-focusVisible, & .MuiMenuItem-root:hover": {
-              backgroundColor: "rgba(77,141,255,0.15)",
-            },
-          },
-        },
-      },
-    },
   },
 };
 
@@ -118,12 +98,25 @@ export default function RankingsPage() {
 
   return (
     <Box sx={{ maxWidth: 720 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
-        Rankings
-      </Typography>
-      <Typography variant="body2" sx={{ color: TEXT_SECONDARY, mt: 0.5 }}>
-        Top players by Glicko rating. Players need at least 5 games in a pool to be ranked.
-      </Typography>
+      {/* Decorative — the heading beside it already names the page, so alt=""
+          stops screen readers announcing "Rankings" twice. */}
+      <Stack direction="row" sx={{ alignItems: "center", gap: 2 }}>
+        <Box
+          component="img"
+          src={RankingsEmblem}
+          alt=""
+          aria-hidden
+          sx={{ width: 72, height: 72, flexShrink: 0, objectFit: "contain", display: "block" }}
+        />
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: TEXT_PRIMARY }}>
+            Rankings
+          </Typography>
+          <Typography variant="body2" sx={{ color: TEXT_SECONDARY, mt: 0.5 }}>
+            Top players by Glicko rating. Players need at least 5 games in a pool to be ranked.
+          </Typography>
+        </Box>
+      </Stack>
 
       {/* Pool selectors: variant (dropdown) × speed (toggle). */}
       <Stack direction="row" sx={{ gap: 2, mt: 3, mb: 2, alignItems: "center", flexWrap: "wrap" }}>
@@ -157,8 +150,8 @@ export default function RankingsPage() {
               "&:hover": { backgroundColor: SURFACE_700 },
               "&.Mui-selected": {
                 color: TEXT_PRIMARY,
-                backgroundColor: MAIN_BLUE,
-                "&:hover": { backgroundColor: MAIN_BLUE_LIGHT },
+                backgroundColor: CTA_PRIMARY,
+                "&:hover": { backgroundColor: ACCENT_BRIGHT },
               },
             },
           }}
@@ -205,7 +198,7 @@ export default function RankingsPage() {
 
         {isLoading ? (
           <Stack sx={{ alignItems: "center", py: 6 }}>
-            <CircularProgress size={28} sx={{ color: ACCENT_BLUE }} />
+            <CircularProgress size={28} sx={{ color: ACCENT_PRIMARY }} />
           </Stack>
         ) : isError ? (
           <Typography sx={{ color: TEXT_SECONDARY, textAlign: "center", py: 6 }}>
@@ -227,7 +220,7 @@ export default function RankingsPage() {
                   py: "10px",
                   borderBottom: `1px solid ${SURFACE_BORDER}`,
                   "&:last-of-type": { borderBottom: "none" },
-                  backgroundColor: isMe ? "rgba(77,141,255,0.12)" : "transparent",
+                  backgroundColor: isMe ? "rgba(201,162,39,0.12)" : "transparent",
                 }}
               >
                 <Typography sx={{ fontWeight: 700, color: RANK_COLOR[entry.rank] ?? TEXT_SECONDARY }}>
@@ -249,7 +242,7 @@ export default function RankingsPage() {
                   >
                     {entry.username}
                     {isMe && (
-                      <Box component="span" sx={{ color: ACCENT_BLUE, fontWeight: 600, ml: 0.75 }}>
+                      <Box component="span" sx={{ color: ACCENT_PRIMARY, fontWeight: 600, ml: 0.75 }}>
                         (you)
                       </Box>
                     )}
@@ -303,6 +296,6 @@ const pagerButtonSx = {
   border: `1px solid ${SURFACE_BORDER}`,
   borderRadius: "10px",
   px: 2,
-  "&:hover": { backgroundColor: SURFACE_700, borderColor: ACCENT_BLUE },
+  "&:hover": { backgroundColor: SURFACE_700, borderColor: ACCENT_PRIMARY },
   "&.Mui-disabled": { color: TEXT_MUTED, borderColor: SURFACE_BORDER, opacity: 0.5 },
 };

@@ -1,48 +1,17 @@
+/*
+ * Layout.tsx renders a sticky <NavBar />, then a <StoneDivider /> pillar, then
+ * a scrolling <main>. The divider is a flex sibling and takes its own column,
+ * so .main is simply that much narrower — nothing here overlaps it.
+ *
+ * This file previously also carried .header / .brand / .nav / .navLink /
+ * .footer rules for a top nav bar that no longer exists — the sidebar in
+ * NavBar.tsx replaced it. They were unreferenced and have been removed.
+ */
+
 .shell {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-surface);
-}
-
-.brand {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.brand:hover {
-  text-decoration: none;
-}
-
-.nav {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.navLink {
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
-  color: var(--color-muted);
-}
-
-.navLink:hover {
-  color: var(--color-text);
-  text-decoration: none;
-}
-
-.navLink.active {
-  color: var(--color-text);
-  background-color: var(--color-bg);
 }
 
 .main {
@@ -50,19 +19,26 @@
   width: 100%;
   margin: 0 auto;
   padding: 2rem 1.5rem;
-  /* Light overlay lifts the near-black hex image toward charcoal */
+  /*
+   * Tiled stone. Reuses the pebble-stone board tile already in the repo rather
+   * than shipping a new asset. Keep in sync with STONE_TEXTURE in
+   * theme/tokens.ts — plain CSS can't import from TypeScript.
+   *
+   * Uses white1 (the LIGHT square tile), which is warm sand. The dark tile is
+   * cool blue-grey and composites to a neutral near-black under any useful
+   * amount of darkening — which is exactly what this looked like before.
+   *
+   * The gradient alphas are the dial: lower = more visible stone, higher =
+   * flatter and darker. At 0.86/0.92 the page lands around #2c2822 → #221f1a,
+   * a little lighter than the SURFACE_800 panels sitting on it, so panels read
+   * as recessed into the wall — which is what the CARVED inset shadow on them
+   * is already doing.
+   */
+  background-color: #221f1a;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.06)), url("../../assets/images/sep09.jpg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-}
-
-.footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-muted);
-  font-size: 0.85rem;
-  text-align: center;
+    linear-gradient(rgba(14, 12, 10, 0.86), rgba(14, 12, 10, 0.92)),
+    url("../../assets/images/boards/pebblestone/white1.png");
+  background-size: auto, 260px 260px;
+  background-repeat: no-repeat, repeat;
+  background-attachment: fixed, fixed;
 }

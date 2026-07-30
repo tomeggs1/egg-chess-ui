@@ -33,11 +33,11 @@ import { OpponentType, type PieceDefinition } from "../data/types";
 import { useGameCatalog } from "../data/GameCatalogContext";
 import type { PlayerSummary } from "../api/friends";
 import {
-  ACCENT_PURPLE,
+  COLOR_DRAW,
   COLOR_ERROR,
   COLOR_SUCCESS,
-  MAIN_BLUE_LIGHT,
-  MAIN_PURPLE,
+  ACCENT_BRIGHT,
+  CTA_SECONDARY,
   RESULT_ACCENT,
   SURFACE_600,
   SURFACE_BLACK,
@@ -269,10 +269,18 @@ export default function GamePage() {
     return map;
   }, [definitions, state?.gameDefinitionId]);
 
-  // A red beam from each checking piece to the king in check. attackersOf finds
-  // the real attacker(s), so discovered checks point from the right piece and
-  // double checks draw both beams.
+  // Red beams from each checking piece to the king.
+  //
+  // DISABLED after user feedback — the beams read as alarming rather than
+  // informative. Flip this to true to restore them; Board still supports the
+  // prop and renders them unchanged, and the pulsing red glow under the king
+  // in check is a separate effect that remains on.
+  const SHOW_CHECK_BEAMS = false;
+
+  // attackersOf finds the real attacker(s), so discovered checks point from the
+  // right piece and double checks draw both beams.
   const checkBeams = useMemo(() => {
+    if (!SHOW_CHECK_BEAMS) return [];
     if (!state || !checkSquare || !pieceDefs) return [];
     const by: PieceColor = state.sideToMove === "white" ? "black" : "white";
     return attackersOf(board, checkSquare, by, pieceDefs).map((a) => ({
@@ -289,7 +297,7 @@ export default function GamePage() {
   }, [state, viewedPly]);
 
   // Once the game is over, tint the board frame from the viewer's perspective:
-  // green win, red loss, purple draw (matching the game-history accents). Active
+  // green win, warm-red loss, slate draw (matching the game-history accents). Active
   // games (and spectators, who have no win/loss perspective) keep the gray frame.
   const boardAccent = useMemo(() => {
     if (!state || state.status === "ACTIVE") return null;
@@ -611,7 +619,7 @@ export default function GamePage() {
                 type="primary"
                 label="Rematch"
                 onClick={() => setRematchOpen(true)}
-                style={{ backgroundColor: MAIN_PURPLE, width: "150px" }}
+                style={{ backgroundColor: CTA_SECONDARY, width: "150px" }}
               />
             </Box>
           )}
@@ -682,7 +690,7 @@ function PlayerRow({
         p: 1,
         borderRadius: "12px",
         backgroundColor: SURFACE_BLACK,
-        border: `1px solid ${toMove ? MAIN_BLUE_LIGHT : SURFACE_BORDER}`,
+        border: `1px solid ${toMove ? ACCENT_BRIGHT : SURFACE_BORDER}`,
       }}
     >
       {/* Left: avatar + name + rating (same badge used across the app), with the
@@ -812,7 +820,7 @@ function Clock({
         borderRadius: "8px",
         // White/black clock face indicates which side the player is.
         backgroundColor: isWhite ? "#ececec" : "#161616",
-        border: `1px solid ${active ? MAIN_BLUE_LIGHT : isWhite ? "#c9c9c9" : "#3a3a3f"}`,
+        border: `1px solid ${active ? ACCENT_BRIGHT : isWhite ? "#c9c9c9" : "#3a3a3f"}`,
       }}
     >
       <Typography
@@ -930,12 +938,12 @@ function StatusLine({
     const isDraw = state.result === "1/2-1/2";
     let text: string;
     // Color the result from the viewer's perspective, matching the board frame /
-    // history accents: green win, red loss, purple draw. Spectator / unresolved
+    // history accents: green win, warm-red loss, slate draw. Spectator / unresolved
     // lines stay neutral.
     let color: string = TEXT_PRIMARY;
     if (isDraw) {
       text = "Draw";
-      color = ACCENT_PURPLE;
+      color = COLOR_DRAW;
     } else if (state.winnerUsername && myColor) {
       const iWon = state.winnerUsername === (myColor === "white" ? state.whiteUsername : state.blackUsername);
       text = iWon ? "You won" : "You lost";

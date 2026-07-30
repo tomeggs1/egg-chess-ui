@@ -7,57 +7,51 @@ export const APP_NAME = "HP Chess";
 export const STORAGE_PREFIX = "Chess++";
 
 // ============================================================================
-// Color palette
+// Design tokens — re-exported for backward compatibility.
 // ----------------------------------------------------------------------------
-// Tuned for a black (#000) background. Accent/text colors have enough
-// luminance to stay legible on dark surfaces; brand colors are kept for
-// logos/fills where contrast is handled by surrounding elements.
+// The palette lives in theme/tokens.ts, which is the single source of truth
+// (it also feeds the MUI theme and the --color-* custom properties). These
+// re-exports exist so the ~40 modules already importing colors from "constants"
+// keep working unchanged.
+//
+// New code should import from "theme/tokens" (or better: use the MUI theme /
+// CSS variables) rather than adding to this list.
 // ============================================================================
-
-// --- Brand ------------------------------------------------------------------
-export const MAIN_BLUE = "#143d95";
-export const MAIN_BLUE_LIGHT = "#1e4dd8";
-export const MAIN_BLUE_DARK = "#162456";
-export const MAIN_PURPLE = "#6002c5";
-export const MAIN_WHITE = "#FFFFFF";
-
-// --- Accents (pop against black) --------------------------------------------
-export const ACCENT_BLUE = "#4d8dff"; // primary interactive accent
-export const ACCENT_CYAN = "#22d3ee";
-export const ACCENT_TEAL = "#2dd4bf";
-export const ACCENT_PURPLE = "#a855f7";
-export const ACCENT_PINK = "#f472b6";
-export const ACCENT_AMBER = "#fbbf24";
-export const ACCENT_GREEN = "#34d399";
-
-// --- Semantic ---------------------------------------------------------------
-export const COLOR_SUCCESS = "#22c55e";
-export const COLOR_WARNING = "#f59e0b";
-export const COLOR_ERROR = "#ef4444";
-export const COLOR_ERROR_TRANSPARENT = "#ef4444d0";
-export const COLOR_INFO = "#38bdf8";
-
-// --- Surfaces (layered dark backgrounds) ------------------------------------
-export const SURFACE_BLACK = "#000000"; // app background
-export const SURFACE_900 = "#0d0d0f"; // near-black raised base
-export const SURFACE_800 = "#161618"; // cards / panels
-export const SURFACE_700 = "#222225"; // nav / sidebars
-export const SURFACE_600 = "#303034"; // hover / active states
-export const SURFACE_BORDER = "#3a3a3f"; // dividers / outlines
-
-// --- Text (on dark) ---------------------------------------------------------
-export const TEXT_PRIMARY = "#f5f5f7"; // headings / high-emphasis
-export const TEXT_SECONDARY = "#b5b5bd"; // body / medium-emphasis
-export const TEXT_MUTED = "#7c7c85"; // captions / disabled
-
-// --- Result accents (top→bottom gradients) ----------------------------------
-// Win / loss / draw gradients, shared by the game-history rows and the
-// finished-game board frame so both read the same colors.
-export const RESULT_ACCENT = {
-  win: "linear-gradient(to bottom, #77df65, #277035)",
-  loss: "linear-gradient(to bottom, #ef5d56, #821b1d)",
-  draw: "linear-gradient(to bottom, #c18ff3, #6a46d4)",
-} as const;
-
-// --- Palette groupings (handy for iteration) --------------------------------
-export const ACCENTS = [ACCENT_BLUE, ACCENT_CYAN, ACCENT_TEAL, ACCENT_GREEN, ACCENT_PINK, ACCENT_PURPLE] as const;
+export {
+  ACCENT_PRIMARY,
+  ACCENT_BRIGHT,
+  ACCENT_DECOR,
+  ACCENT_COOL,
+  ACCENT_AMBER,
+  ACCENT_GREEN,
+  CTA_PRIMARY,
+  CTA_PRIMARY_DARK,
+  CTA_SECONDARY,
+  MAIN_WHITE,
+  COLOR_SUCCESS,
+  COLOR_WARNING,
+  COLOR_ERROR,
+  COLOR_ERROR_TRANSPARENT,
+  COLOR_INFO,
+  COLOR_DRAW,
+  HP,
+  ELIXIR,
+  PIECE_IVORY,
+  PIECE_EBONY,
+  SURFACE_BLACK,
+  SURFACE_900,
+  SURFACE_800,
+  SURFACE_700,
+  SURFACE_600,
+  SURFACE_BORDER,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  TEXT_MUTED,
+  RESULT_ACCENT,
+  ACCENTS,
+  RADIUS,
+  BORDER_WIDTH,
+  CARVED,
+  STONE_TEXTURE,
+  FONT,
+} from "./theme/tokens";
